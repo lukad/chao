@@ -1,0 +1,6 @@
+[package]
+name = "libchao"
+version = "0.1.0"
+authors = ["Luka Dornhecker <luka.dornhecker@toptranslation.com>"]
+
+[dependencies]
