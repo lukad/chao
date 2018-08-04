@@ -1,0 +1,7 @@
+[package]
+name = "chao"
+version = "0.1.0"
+authors = ["Luka Dornhecker <luka.dornhecker@gmail.com>"]
+
+[dependencies]
+rustyline = "1.0"
