@@ -93,19 +93,15 @@ impl Div for Expr {
     }
 }
 
-pub struct Function(pub fn(&mut Env) -> Expr);
+#[derive(Clone)]
+pub enum Function {
+    Builtin(fn(&mut Env) -> Expr),
+    Dynamic(Box<Expr>),
+}
 
 impl PartialEq for Function {
     fn eq(&self, _other: &Self) -> bool {
         false
-    }
-}
-
-impl Copy for Function {}
-
-impl Clone for Function {
-    fn clone(&self) -> Self {
-        *self
     }
 }
 
