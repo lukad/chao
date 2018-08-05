@@ -6,3 +6,4 @@ authors = ["Luka Dornhecker <luka.dornhecker@toptranslation.com>"]
 [dependencies]
 itertools = "0.7"
 combine = "3.4"
+colored = "1.6"
