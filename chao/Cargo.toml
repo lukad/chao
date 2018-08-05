@@ -5,3 +5,4 @@ authors = ["Luka Dornhecker <luka.dornhecker@toptranslation.com>"]
 
 [dependencies]
 rustyline = "1.0"
+libchao = { path = "../libchao" }
