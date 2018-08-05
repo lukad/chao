@@ -24,6 +24,9 @@ impl Env {
 
     fn initialize(&mut self) {
         self.insert("+".to_string(), Fun(Function(add), Arguments::Variadic));
+        self.insert("-".to_string(), Fun(Function(sub), Arguments::Variadic));
+        self.insert("*".to_string(), Fun(Function(mul), Arguments::Variadic));
+        self.insert("/".to_string(), Fun(Function(div), Arguments::Variadic));
         self.insert("=".to_string(), Fun(Function(eq), Arguments::Variadic));
         self.insert(
             "if".to_string(),
@@ -118,13 +121,41 @@ impl Env {
 
 fn add(env: &mut Env) -> Expr {
     if let Some(List(args)) = env.get("varargs".to_string()) {
-        let sum = args.iter().fold(0, |acc, x| match x {
-            Int(n) => acc + n,
-            _ => panic!("Can't add {:?}", x),
-        });
-        Int(sum)
+        args.iter().fold(Int(0), |acc, x| acc + x.clone())
     } else {
-        panic!("meh :(");
+        panic!("could not fetch arguments");
+    }
+}
+
+fn sub(env: &mut Env) -> Expr {
+    if let Some(List(args)) = env.get("varargs".to_string()) {
+        match &args[..] {
+            [x] => Int(0) - x.clone(),
+            [head, tail..] => tail.iter().fold(head.clone(), |acc, x| acc - x.clone()),
+            [] => panic!("sub requires at least one argument"),
+        }
+    } else {
+        panic!("could not fetch arguments");
+    }
+}
+
+fn mul(env: &mut Env) -> Expr {
+    if let Some(List(args)) = env.get("varargs".to_string()) {
+        args.iter().fold(Int(1), |acc, x| acc * x.clone())
+    } else {
+        panic!("could not fetch arguments");
+    }
+}
+
+fn div(env: &mut Env) -> Expr {
+    if let Some(List(args)) = env.get("varargs".to_string()) {
+        match &args[..] {
+            [head] => Int(1) / head.clone(),
+            [head, tail..] => tail.iter().fold(head.clone(), |acc, x| acc / x.clone()),
+            [] => panic!("div requires at least one argument"),
+        }
+    } else {
+        panic!("could not fetch arguments");
     }
 }
 
