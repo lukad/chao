@@ -61,18 +61,32 @@ impl Env {
                 Arguments::Fixed(vec!["args".to_string(), "body".to_string()]),
             ),
         );
+        self.insert(
+            "set".to_string(),
+            Fun(
+                Function::Builtin(set),
+                Arguments::Fixed(vec!["name".to_string(), "value".to_string()]),
+            ),
+        );
     }
 
     pub fn eval(&mut self, value: &Expr) -> Expr {
         match value {
+            Nil => Nil,
             Int(x) => Int(*x),
+            Float(x) => Float(*x),
             Bool(x) => Bool(*x),
             Str(x) => Str(x.clone()),
-            Symbol(x) => self.get(x.clone()).unwrap(),
+            Symbol(x) => self.get(x.clone()).unwrap_or(Nil),
+            Quote(x) => *x.clone(),
             Fun(f, args) => Fun(f.clone(), args.clone()),
+            Special(f, args) => Fun(f.clone(), args.clone()),
             List(list) => self.eval_list(list),
-            _ => Nil,
         }
+    }
+
+    pub fn insert_parent(&mut self, key: String, value: Expr) {
+        self.stack[0].insert(key, value);
     }
 
     pub fn insert(&mut self, key: String, value: Expr) {
@@ -230,5 +244,18 @@ fn lambda(env: &mut Env) -> Expr {
             Fun(Function::Dynamic(Box::new(body)), arguments)
         }
         _ => panic!("This should not happen"),
+    }
+}
+
+fn set(env: &mut Env) -> Expr {
+    match (
+        env.get("name".to_string()).unwrap(),
+        env.get("value".to_string()).unwrap(),
+    ) {
+        (Symbol(s), expr) => {
+            env.insert_parent(s, expr.clone());
+            expr
+        }
+        (other, _) => panic!("Variable name is not a symbol: {:?}", other),
     }
 }
