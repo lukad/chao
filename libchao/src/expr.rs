@@ -1,5 +1,6 @@
 use std::ops::{Add, Div, Mul, Sub};
 
+use colored::*;
 use itertools::Itertools;
 
 use env::Env;
@@ -34,6 +35,23 @@ impl fmt::Debug for Expr {
             Fun(_, _) => write!(f, "<function>"),
             Special(_, _) => write!(f, "<special>"),
             List(xs) => write!(f, "({})", xs.iter().map(|x| format!("{:?}", x)).join(" ")),
+        }
+    }
+}
+
+impl fmt::Display for Expr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Nil => write!(f, "{}", format!("{:?}", self).cyan()),
+            Bool(_) => write!(f, "{}", format!("{:?}", self).green()),
+            Int(_) => write!(f, "{}", format!("{:?}", self).blue()),
+            Float(_) => write!(f, "{}", format!("{:?}", self).blue()),
+            Str(_) => write!(f, "{}", format!("{:?}", self).yellow()),
+            Symbol(_) => write!(f, "{}", format!("{:?}", self).white()),
+            Quote(x) => write!(f, "'{}", x),
+            Fun(_, _) => write!(f, "{}", format!("{:?}", self).magenta()),
+            Special(_, _) => write!(f, "{}", format!("{:?}", self).magenta()),
+            List(xs) => write!(f, "({})", xs.iter().map(|x| format!("{}", x)).join(" ")),
         }
     }
 }

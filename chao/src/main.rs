@@ -16,7 +16,7 @@ fn main() {
             Ok(line) => {
                 rl.add_history_entry(&line);
                 if let Some(expr) = parse(&line) {
-                    println!("=> {:?}", env.eval(&expr));
+                    println!("=> {}", env.eval(&expr));
                 }
             }
             Err(ReadlineError::Interrupted) => continue,

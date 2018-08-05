@@ -2,6 +2,7 @@
 
 #[macro_use]
 extern crate combine;
+extern crate colored;
 extern crate itertools;
 
 mod env;
