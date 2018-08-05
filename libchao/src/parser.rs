@@ -16,7 +16,7 @@ where
     let hex = (string("0x"), many1(hex_digit()))
         .map(|(_, s): (_, String)| i64::from_str_radix(&s, 16).unwrap());
 
-    let decimal = (many1(digit()), spaces()).map(|(s, _): (String, _)| s.parse::<i64>().unwrap());
+    let decimal = many1(digit()).map(|s: String| s.parse::<i64>().unwrap());
 
     (choice((try(binary), try(hex), try(decimal))).skip(spaces())).map(Int)
 }
@@ -56,7 +56,7 @@ where
     I: Stream<Item = char>,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
-    string("nil").map(|_| Nil)
+    string("nil").skip(spaces()).map(|_| Nil)
 }
 
 parser!{
