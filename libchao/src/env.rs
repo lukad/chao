@@ -24,6 +24,7 @@ impl Env {
 
     fn initialize(&mut self) {
         self.insert("+".to_string(), Fun(Function(add), Arguments::Variadic));
+        self.insert("=".to_string(), Fun(Function(eq), Arguments::Variadic));
         self.insert(
             "if".to_string(),
             Special(
@@ -139,5 +140,17 @@ fn iff(env: &mut Env) -> Expr {
             _ => panic!("not a bool"),
         },
         _ => panic!("ass"),
+    }
+}
+
+fn eq(env: &mut Env) -> Expr {
+    if let Some(List(args)) = env.get("varargs".to_string()) {
+        match &args[..] {
+            [_head] => Bool(true),
+            [head, tail..] => Bool(tail.iter().all(|ref x| *x == head)),
+            [] => panic!("eq requires a at least one argument"),
+        }
+    } else {
+        panic!("eq requires a at least one argument")
     }
 }

@@ -3,7 +3,7 @@ use itertools::Itertools;
 use env::Env;
 use std::fmt;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Expr {
     Nil,
     Bool(bool),
@@ -34,9 +34,9 @@ impl fmt::Debug for Expr {
 
 pub struct Function(pub fn(&mut Env) -> Expr);
 
-impl fmt::Debug for Function {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "<fn>")
+impl PartialEq for Function {
+    fn eq(&self, _other: &Self) -> bool {
+        false
     }
 }
 
@@ -48,7 +48,7 @@ impl Clone for Function {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Arguments {
     Variadic,
     Fixed(Vec<String>),
