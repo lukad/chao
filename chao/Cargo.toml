@@ -2,7 +2,13 @@
 name = "chao"
 version = "0.1.0"
 authors = ["Luka Dornhecker <luka.dornhecker@gmail.com>"]
+description = "A simple lisp repl"
+homepage = "https://github.com/lukad/chao"
+license = "MIT"
+
+[badges]
+travis-ci = { repository = "lukad/chao", branch = "master" }
 
 [dependencies]
 rustyline = "1.0"
-libchao = { path = "../libchao" }
+libchao = { path = "../libchao", version = "0.1.0" }

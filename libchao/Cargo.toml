@@ -2,6 +2,12 @@
 name = "libchao"
 version = "0.1.0"
 authors = ["Luka Dornhecker <luka.dornhecker@gmail.com>"]
+description = "A simple lisp implementation"
+homepage = "https://github.com/lukad/chao"
+license = "MIT"
+
+[badges]
+travis-ci = { repository = "lukad/chao", branch = "master" }
 
 [dependencies]
 itertools = "0.7"
