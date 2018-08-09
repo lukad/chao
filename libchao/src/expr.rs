@@ -29,7 +29,7 @@ impl fmt::Debug for Expr {
             Bool(x) => write!(f, "{:?}", x),
             Int(x) => write!(f, "{:?}", x),
             Float(x) => write!(f, "{:?}", x),
-            Str(x) => write!(f, "\"{}\"", x),
+            Str(x) => write!(f, "{:?}", x),
             Symbol(x) => write!(f, "{}", x),
             Quote(x) => write!(f, "'{:?}", x),
             Fun(_, _) => write!(f, "<function>"),

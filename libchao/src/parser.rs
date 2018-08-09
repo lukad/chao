@@ -1,7 +1,8 @@
 use std::i64;
 
 use combine::char::{char as c, digit, hex_digit, letter, spaces, string};
-use combine::{between, choice, eof, many, many1, one_of, try, ParseError, Parser, Stream, optional};
+use combine::{parser, satisfy_map, any, between, choice, eof, many, many1, one_of, try, ParseError, Parser, Stream, optional};
+use combine::error::Consumed;
 
 use expr::Expr::{self, *};
 
@@ -51,6 +52,33 @@ where
         .map(Symbol)
 }
 
+fn sstring<I>() -> impl Parser<Input = I, Output = Expr>
+where
+    I: Stream<Item = char>,
+    I::Error: ParseError<I::Item, I::Range, I::Position>,
+{
+    let string_char = parser(|input: &mut I| {
+        let (c, consumed) = try!(any().parse_lazy(input).into());
+        let mut back_slash_char = satisfy_map(|c| {
+            Some(match c {
+                '"' => '"',
+                '\\' => '\\',
+                'n' => '\n',
+                'r' => '\r',
+                't' => '\t',
+                _ => return None,
+            })
+        });
+        match c {
+            '\\' => consumed.combine(|_| back_slash_char.parse_stream(input)),
+            '"' => Err(Consumed::Empty(I::Error::empty(input.position()).into())),
+            _ => Ok((c, consumed)),
+        }
+    });
+
+    between(c('"'), c('"').skip(spaces()), many(string_char)).map(|s| Str(s))
+}
+
 fn nil<I>() -> impl Parser<Input = I, Output = Expr>
 where
     I: Stream<Item = char>,
@@ -78,6 +106,7 @@ parser!{
             nil(),
             symbol(),
             empty_list,
+            sstring(),
             list,
             quote
         ))

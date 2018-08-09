@@ -85,3 +85,20 @@ fn parses_quotes() {
                   )
     );
 }
+
+#[test]
+fn parses_strings() {
+    assert_parse!(r#""""#, Str("".to_string()));
+    assert_parse!(r#""\"""#, Str("\"".to_string()));
+    assert_parse!(r#""\n""#, Str("\n".to_string()));
+    assert_parse!(r#""\r""#, Str("\r".to_string()));
+    assert_parse!(r#""\t""#, Str("\t".to_string()));
+    assert_parse!(r#""\\""#, Str("\\".to_string()));
+    assert_parse!(r#"" a b c ""#, Str(" a b c ".to_string()));
+    assert_parse!(r#""' \"abc\" '""#, Str("' \"abc\" '".to_string()));
+    assert_parse_err!(r#"""#);
+    assert_parse_err!(r#"\"#);
+    assert_parse_err!(r#"\\"#);
+    assert_parse_err!(r#"\"""#);
+    assert_parse_err!(r#""\foo""#);
+}
