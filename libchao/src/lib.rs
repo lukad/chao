@@ -6,9 +6,9 @@ extern crate colored;
 extern crate itertools;
 
 mod builtin;
-mod env;
-mod expr;
-mod parser;
+pub mod env;
+pub mod expr;
+pub mod parser;
 
 pub use env::Env;
 pub use expr::Expr;
