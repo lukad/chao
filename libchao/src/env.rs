@@ -68,6 +68,13 @@ impl Env {
                 Arguments::Fixed(vec!["name".to_string(), "value".to_string()]),
             ),
         );
+        self.insert(
+            "intern".to_string(),
+            Fun(
+                Function::Builtin(intern),
+                Arguments::Fixed(vec!["string".to_string()]),
+            ),
+        );
     }
 
     pub fn eval(&mut self, value: &Expr) -> Expr {
@@ -258,5 +265,12 @@ fn set(env: &mut Env) -> Expr {
             expr
         }
         (other, _) => panic!("Variable name is not a symbol: {:?}", other),
+    }
+}
+
+fn intern(env: &mut Env) -> Expr {
+    match env.get("string".to_string()).unwrap() {
+        Str(s) => Symbol(s),
+        other => panic!("Can't intern {:?}", other),
     }
 }
