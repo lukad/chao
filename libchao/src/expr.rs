@@ -47,7 +47,7 @@ impl fmt::Display for Expr {
             Int(_) => write!(f, "{}", format!("{:?}", self).blue()),
             Float(_) => write!(f, "{}", format!("{:?}", self).blue()),
             Str(_) => write!(f, "{}", format!("{:?}", self).yellow()),
-            Symbol(_) => write!(f, "{}", format!("{:?}", self).white()),
+            Symbol(_) => write!(f, "{}", format!("{:?}", self).bright_white()),
             Quote(x) => write!(f, "'{}", x),
             Fun(_, _) => write!(f, "{}", format!("{:?}", self).magenta()),
             Special(_, _) => write!(f, "{}", format!("{:?}", self).magenta()),
