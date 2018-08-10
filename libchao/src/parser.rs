@@ -1,8 +1,11 @@
 use std::i64;
 
 use combine::char::{char as c, digit, hex_digit, letter, spaces, string};
-use combine::{parser, satisfy_map, any, between, choice, eof, many, many1, one_of, try, ParseError, Parser, Stream, optional};
 use combine::error::Consumed;
+use combine::{
+    any, between, choice, eof, many, many1, one_of, optional, parser, satisfy_map, try, ParseError,
+    Parser, Stream,
+};
 
 use expr::Expr::{self, *};
 
@@ -19,7 +22,9 @@ where
 
     let decimal = many1(digit()).map(|s: String| s.parse::<i64>().unwrap());
 
-    choice((try(binary), try(hex), try(decimal))).skip(spaces()).map(Int)
+    choice((try(binary), try(hex), try(decimal)))
+        .skip(spaces())
+        .map(Int)
 }
 
 fn float<I>() -> impl Parser<Input = I, Output = Expr>
@@ -84,7 +89,7 @@ where
     I: Stream<Item = char>,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
-    string("nil").skip(spaces()).map(|_| Nil)
+    try(string("nil")).skip(spaces()).map(|_| Nil)
 }
 
 parser!{
