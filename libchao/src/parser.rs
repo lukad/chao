@@ -32,9 +32,11 @@ where
     I: Stream<Item = char>,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
-    (many1(digit()), string("."), many1(digit())).map(|(a, b, c): (String, &str, String)| {
-        Float([a, b.to_string(), c].join("").parse::<f64>().unwrap())
-    })
+    try((many1(digit()), string("."), many1(digit())))
+        .skip(spaces())
+        .map(|(a, b, c): (String, &str, String)| {
+            Float([a, b.to_string(), c].join("").parse::<f64>().unwrap())
+        })
 }
 
 fn boolean<I>() -> impl Parser<Input = I, Output = Expr>
@@ -106,8 +108,8 @@ parser!{
 
         choice((
             boolean(),
-            int(),
             float(),
+            int(),
             nil(),
             symbol(),
             empty_list,

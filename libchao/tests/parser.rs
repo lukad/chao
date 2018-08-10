@@ -3,17 +3,16 @@ extern crate libchao;
 use libchao::Expr::*;
 
 macro_rules! assert_parse {
-    ($input:expr, $expected:expr) => (
+    ($input:expr, $expected:expr) => {
         assert_eq!(libchao::parse($input), Ok($expected))
-    )
+    };
 }
 
 macro_rules! assert_parse_err {
-    ($input:expr) => (
+    ($input:expr) => {
         assert!(libchao::parse($input).is_err())
-    )
+    };
 }
-
 
 #[test]
 fn parses_whitespace() {
@@ -49,15 +48,43 @@ fn parses_integers() {
 }
 
 #[test]
+fn parses_floats() {
+    assert_parse!("0.1", Float(0.1));
+    assert_parse!("1.0", Float(1.0));
+    assert_parse_err!("1.");
+    assert_parse!("10.000000", Float(10.0));
+    assert_parse!("10.0000001", Float(10.0000001));
+    assert_parse_err!("1 .0");
+}
+
+#[test]
 fn parses_lists() {
-    assert_parse!("(+ 1 nil true)", List(vec![Symbol("+".to_string()), Int(1), Nil, Bool(true)]));
+    assert_parse!(
+        "(+ 1 nil true)",
+        List(vec![Symbol("+".to_string()), Int(1), Nil, Bool(true)])
+    );
     assert_parse!("()", Nil);
     assert_parse!("(())", List(vec![Nil]));
     assert_parse!("(1 () 2)", List(vec![Int(1), Nil, Int(2)]));
     assert_parse!("((()))", List(vec![List(vec![Nil])]));
     assert_parse!("((() ()))", List(vec![List(vec![Nil, Nil])]));
     assert_parse!("((42))", List(vec![List(vec![Int(42)])]));
-    assert_parse!("(+ 1 2 3)", List(vec![Symbol("+".to_string()), Int(1), Int(2), Int(3)]));
+    assert_parse!(
+        "(+ 1 2 3)",
+        List(vec![Symbol("+".to_string()), Int(1), Int(2), Int(3)])
+    );
+    assert_parse!(
+        "(1 5.0 \"foo\" nil bar 0.42 ())",
+        List(vec![
+            Int(1),
+            Float(5.0),
+            Str("foo".to_string()),
+            Nil,
+            Symbol("bar".to_string()),
+            Float(0.42),
+            Nil,
+        ])
+    );
 }
 
 #[test]
@@ -65,24 +92,17 @@ fn parses_quotes() {
     assert_parse!("'1", Quote(Box::new(Int(1))));
     assert_parse!("''1", Quote(Box::new(Quote(Box::new(Int(1))))));
     assert_parse!("'()", Quote(Box::new(Nil)));
-    assert_parse!("'(a b c)", Quote(Box::new(List(vec![
-        Symbol("a".to_string()),
-        Symbol("b".to_string()),
-        Symbol("c".to_string())
-    ]))));
+    assert_parse!(
+        "'(a b c)",
+        Quote(Box::new(List(vec![
+            Symbol("a".to_string()),
+            Symbol("b".to_string()),
+            Symbol("c".to_string()),
+        ])))
+    );
     assert_parse!(
         "'('(1))",
-                  Quote(
-                      Box::new(
-                          List(vec![
-                              Quote(
-                                  Box::new(
-                                      List(vec![Int(1)])
-                                  )
-                              )
-                          ])
-                      )
-                  )
+        Quote(Box::new(List(vec![Quote(Box::new(List(vec![Int(1)])))])))
     );
 }
 
