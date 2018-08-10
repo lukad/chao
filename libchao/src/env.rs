@@ -243,6 +243,7 @@ fn lambda(env: &mut Env) -> Expr {
             );
             Fun(Function::Dynamic(Box::new(body)), arguments)
         }
+        Nil => Fun(Function::Dynamic(Box::new(body)), Arguments::Fixed(vec![])),
         _ => panic!("This should not happen"),
     }
 }
