@@ -5,6 +5,7 @@ extern crate combine;
 extern crate colored;
 extern crate itertools;
 
+mod builtin;
 mod env;
 mod expr;
 mod parser;
