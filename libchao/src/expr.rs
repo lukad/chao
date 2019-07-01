@@ -18,6 +18,7 @@ pub enum Expr {
     Fun(Function, Arguments),
     Special(Function, Arguments),
     List(Vec<Expr>),
+    Error(String),
 }
 
 use Expr::*;
@@ -35,6 +36,7 @@ impl fmt::Debug for Expr {
             Fun(_, args) => write!(f, "<function {:?}>", args),
             Special(_, _) => write!(f, "<special>"),
             List(xs) => write!(f, "({})", xs.iter().map(|x| format!("{:?}", x)).join(" ")),
+            Error(err) => write!(f, "ERROR: {}", err),
         }
     }
 }
@@ -52,6 +54,7 @@ impl fmt::Display for Expr {
             Fun(_, _) => write!(f, "{}", format!("{:?}", self).magenta()),
             Special(_, _) => write!(f, "{}", format!("{:?}", self).magenta()),
             List(xs) => write!(f, "({})", xs.iter().map(|x| format!("{}", x)).join(" ")),
+            Error(_) => write!(f, "{}", format!("{:?}", self).red()),
         }
     }
 }
@@ -66,7 +69,7 @@ impl Add for Expr {
             (Float(a), Int(b)) => Float(a + b as f64),
             (Float(a), Float(b)) => Float(a + b),
             (Str(a), Str(b)) => Str(format!("{}{}", a, b)),
-            (a, b) => panic!("Can't add {:?} and {:?}", a, b),
+            (a, b) => Error(format!("Can't add {:?} and {:?}", a, b)),
         }
     }
 }
@@ -80,7 +83,7 @@ impl Sub for Expr {
             (Int(a), Float(b)) => Float(a as f64 - b),
             (Float(a), Int(b)) => Float(a - b as f64),
             (Float(a), Float(b)) => Float(a - b),
-            (a, b) => panic!("Can't subtract {:?} from {:?}", b, a),
+            (a, b) => Error(format!("Can't subtract {:?} from {:?}", b, a)),
         }
     }
 }
@@ -94,7 +97,7 @@ impl Mul for Expr {
             (Int(a), Float(b)) => Float(a as f64 * b),
             (Float(a), Int(b)) => Float(a * b as f64),
             (Float(a), Float(b)) => Float(a * b),
-            (a, b) => panic!("Can't multiply {:?} with {:?}", a, b),
+            (a, b) => Error(format!("Can't multiply {:?} with {:?}", a, b)),
         }
     }
 }
@@ -108,7 +111,7 @@ impl Div for Expr {
             (Int(a), Float(b)) => Float(a as f64 / b),
             (Float(a), Int(b)) => Float(a / b as f64),
             (Float(a), Float(b)) => Float(a / b),
-            (a, b) => panic!("Can't divide {:?} a {:?}", a, b),
+            (a, b) => Error(format!("Can't divide {:?} by {:?}", a, b)),
         }
     }
 }

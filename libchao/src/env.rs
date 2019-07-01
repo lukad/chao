@@ -35,6 +35,7 @@ impl Env {
             Fun(f, args) => Fun(f.clone(), args.clone()),
             Special(f, args) => Fun(f.clone(), args.clone()),
             List(list) => self.eval_list(list),
+            Error(_) => value.clone(),
         }
     }
 
@@ -87,7 +88,7 @@ impl Env {
                     self.exit();
                     result
                 }
-                other => panic!("Can't apply {:?}", other),
+                other => Error(format!("Can't apply {:?} ({:?})", expr, other)),
             },
             [] => Nil,
         }
@@ -105,7 +106,7 @@ impl Env {
             Arguments::Variadic => self.insert("varargs".to_string(), List(exprs)),
             Arguments::Fixed(names) => {
                 if exprs.len() != names.len() {
-                    panic!("Wrong argument count");
+                    Error("Wrong argument count".to_string());
                 }
                 for (expr, name) in exprs.iter().zip(names) {
                     self.insert(name, expr.clone());

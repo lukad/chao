@@ -1,9 +1,5 @@
 use env::Env;
-use expr::{
-    Arguments,
-    Expr::{self, *},
-    Function,
-};
+use expr::{Arguments, Expr, Expr::*, Function};
 
 pub fn load(env: &mut Env) {
     env.insert(
@@ -64,7 +60,7 @@ fn add(env: &mut Env) -> Expr {
     if let Some(List(args)) = env.get("varargs".to_string()) {
         args.iter().fold(Int(0), |acc, x| acc + x.clone())
     } else {
-        panic!("could not fetch arguments");
+        Error("could not fetch arguments".to_string())
     }
 }
 
@@ -73,10 +69,10 @@ fn sub(env: &mut Env) -> Expr {
         match &args[..] {
             [x] => Int(0) - x.clone(),
             [head, tail..] => tail.iter().fold(head.clone(), |acc, x| acc - x.clone()),
-            [] => panic!("sub requires at least one argument"),
+            [] => Error("sub requires at least one argument".to_string()),
         }
     } else {
-        panic!("could not fetch arguments");
+        Error("could not fetch arguments".to_string())
     }
 }
 
@@ -84,7 +80,7 @@ fn mul(env: &mut Env) -> Expr {
     if let Some(List(args)) = env.get("varargs".to_string()) {
         args.iter().fold(Int(1), |acc, x| acc * x.clone())
     } else {
-        panic!("could not fetch arguments");
+        Error("could not fetch arguments".to_string())
     }
 }
 
@@ -93,10 +89,10 @@ fn div(env: &mut Env) -> Expr {
         match &args[..] {
             [head] => Int(1) / head.clone(),
             [head, tail..] => tail.iter().fold(head.clone(), |acc, x| acc / x.clone()),
-            [] => panic!("div requires at least one argument"),
+            [] => Error("div requires at least one argument".to_string()),
         }
     } else {
-        panic!("could not fetch arguments");
+        Error("could not fetch arguments".to_string())
     }
 }
 
@@ -106,12 +102,13 @@ fn iff(env: &mut Env) -> Expr {
         env.get("expr1".to_string()),
         env.get("expr2".to_string()),
     ) {
+        (Some(Error(e)), _, _) => Error(e),
         (Some(cond), Some(expr1), Some(expr2)) => match cond {
             Bool(true) => env.eval(&expr1),
             Bool(false) => env.eval(&expr2),
-            _ => panic!("not a bool"),
+            _ => Error("not a bool".to_string()),
         },
-        _ => panic!("ass"),
+        _ => Error("not enough arguments supplied to if".to_string()),
     }
 }
 
@@ -120,10 +117,10 @@ fn eq(env: &mut Env) -> Expr {
         match &args[..] {
             [_head] => Bool(true),
             [head, tail..] => Bool(tail.iter().all(|ref x| *x == head)),
-            [] => panic!("eq requires a at least one argument"),
+            [] => Error("eq requires a at least one argument".to_string()),
         }
     } else {
-        panic!("eq requires a at least one argument")
+        Error("eq requires a at least one argument".to_string())
     }
 }
 
@@ -131,18 +128,20 @@ fn lambda(env: &mut Env) -> Expr {
     let body = env.get("body".to_string()).unwrap();
     match env.get("args".to_string()).unwrap() {
         List(args) => {
-            let arguments = Arguments::Fixed(
-                args.iter()
-                    .map(|arg| match arg {
-                        Symbol(s) => s.clone(),
-                        _ => panic!("lambda arguments must be symbols"),
-                    })
-                    .collect::<Vec<_>>(),
-            );
-            Fun(Function::Dynamic(Box::new(body)), arguments)
+            let mut arguments = vec![];
+            for arg in args.iter() {
+                match arg {
+                    Symbol(s) => arguments.push(s.clone()),
+                    _ => return Error("lambda arguments must be symbols".to_string()),
+                }
+            }
+            Fun(
+                Function::Dynamic(Box::new(body)),
+                Arguments::Fixed(arguments),
+            )
         }
         Nil => Fun(Function::Dynamic(Box::new(body)), Arguments::Fixed(vec![])),
-        _ => panic!("This should not happen"),
+        _ => Error("First lambda argument must be a list of argument names".to_string()),
     }
 }
 
@@ -155,13 +154,13 @@ fn set(env: &mut Env) -> Expr {
             env.insert_parent(s, expr.clone());
             expr
         }
-        (other, _) => panic!("Variable name is not a symbol: {:?}", other),
+        (other, _) => Error(format!("Variable name is not a symbol: {:?}", other)),
     }
 }
 
 fn intern(env: &mut Env) -> Expr {
     match env.get("string".to_string()).unwrap() {
         Str(s) => Symbol(s),
-        other => panic!("Can't intern {:?}", other),
+        other => Error(format!("Can't intern {:?}", other)),
     }
 }
