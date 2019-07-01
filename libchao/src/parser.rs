@@ -3,8 +3,8 @@ use std::i64;
 use combine::char::{char as c, digit, hex_digit, letter, spaces, string};
 use combine::error::Consumed;
 use combine::{
-    any, between, choice, eof, many, many1, one_of, optional, parser, satisfy_map, try, ParseError,
-    Parser, Stream,
+    any, attempt, between, choice, eof, many, many1, one_of, optional, parser, satisfy_map,
+    ParseError, Parser, Stream,
 };
 
 use expr::Expr::{self, *};
@@ -22,7 +22,7 @@ where
 
     let decimal = many1(digit()).map(|s: String| s.parse::<i64>().unwrap());
 
-    choice((try(binary), try(hex), try(decimal)))
+    choice((attempt(binary), attempt(hex), attempt(decimal)))
         .skip(spaces())
         .map(Int)
 }
@@ -32,7 +32,7 @@ where
     I: Stream<Item = char>,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
-    try((many1(digit()), string("."), many1(digit())))
+    attempt((many1(digit()), string("."), many1(digit())))
         .skip(spaces())
         .map(|(a, b, c): (String, &str, String)| {
             Float([a, b.to_string(), c].join("").parse::<f64>().unwrap())
@@ -46,7 +46,7 @@ where
 {
     let t = || string("true").map(|_| Bool(true));
     let f = || string("false").map(|_| Bool(false));
-    (try(choice((t(), f()))), spaces()).map(|(b, _)| b)
+    (attempt(choice((t(), f()))), spaces()).map(|(b, _)| b)
 }
 
 fn symbol<I>() -> impl Parser<Input = I, Output = Expr>
@@ -91,15 +91,15 @@ where
     I: Stream<Item = char>,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
-    try(string("nil")).skip(spaces()).map(|_| Nil)
+    attempt(string("nil")).skip(spaces()).map(|_| Nil)
 }
 
-parser!{
+parser! {
     #[inline(always)]
     fn expr[I]()(I) -> Expr
     where [I: Stream<Item = char>]
     {
-        let empty_list = try((c('('), spaces(), c(')'), spaces())).map(|_| Nil);
+        let empty_list = attempt((c('('), spaces(), c(')'), spaces())).map(|_| Nil);
         let list = between(c('(').skip(spaces()), c(')'), many(expr()))
             .skip(spaces())
             .map(Expr::List);

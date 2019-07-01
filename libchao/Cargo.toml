@@ -10,6 +10,6 @@ license = "MIT"
 travis-ci = { repository = "lukad/chao", branch = "master" }
 
 [dependencies]
-itertools = "0.7"
-combine = "3.4"
-colored = "1.6"
+itertools = "^0.8"
+combine = "^3.2"
+colored = "^1.6"
