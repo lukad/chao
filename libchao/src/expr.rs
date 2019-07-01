@@ -32,7 +32,7 @@ impl fmt::Debug for Expr {
             Str(x) => write!(f, "{:?}", x),
             Symbol(x) => write!(f, "{}", x),
             Quote(x) => write!(f, "'{:?}", x),
-            Fun(_, _) => write!(f, "<function>"),
+            Fun(_, args) => write!(f, "<function {:?}>", args),
             Special(_, _) => write!(f, "<special>"),
             List(xs) => write!(f, "({})", xs.iter().map(|x| format!("{:?}", x)).join(" ")),
         }
@@ -125,8 +125,26 @@ impl PartialEq for Function {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum Arguments {
     Variadic,
     Fixed(Vec<String>),
+}
+
+impl fmt::Debug for Arguments {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Arguments::Variadic => write!(f, "..."),
+            Arguments::Fixed(args) => {
+                let mut result = String::new();
+                for (i, arg) in args.iter().enumerate() {
+                    result.push_str(arg.as_str());
+                    if i + 1 < args.len() {
+                        result.push_str(", ");
+                    }
+                }
+                write!(f, "({})", result)
+            }
+        }
+    }
 }
