@@ -54,7 +54,7 @@ where
     I: Stream<Item = char>,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
-    many1(letter().or(one_of("+-*/^&|%!=".chars())))
+    many1(letter().or(one_of("+-*/^&|%!=><".chars())))
         .skip(spaces())
         .map(Symbol)
 }

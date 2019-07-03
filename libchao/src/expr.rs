@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::ops::{Add, Div, Mul, Sub};
 
 use colored::*;
@@ -19,6 +20,27 @@ pub enum Expr {
     Special(Function, Arguments),
     List(Vec<Expr>),
     Error(String),
+}
+
+impl Eq for Expr {}
+
+impl PartialOrd for Expr {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match (self, other) {
+            (Nil, Nil) => Some(Ordering::Equal),
+            (Bool(a), Bool(b)) => PartialOrd::partial_cmp(a, b),
+            (Int(a), Int(b)) => PartialOrd::partial_cmp(a, b),
+            (Int(a), Float(b)) => PartialOrd::partial_cmp(&(*a as f64), b),
+            (Float(a), Float(b)) => PartialOrd::partial_cmp(a, b),
+            (Float(a), Int(b)) => PartialOrd::partial_cmp(a, &(*b as f64)),
+            (Str(a), Str(b)) => PartialOrd::partial_cmp(a, b),
+            (Symbol(a), Symbol(b)) => PartialOrd::partial_cmp(a, b),
+            (Quote(a), Quote(b)) => PartialOrd::partial_cmp(a, b),
+            (Fun(a, _), Fun(b, _)) => PartialOrd::partial_cmp(a, b),
+            (Special(a, _), Special(b, _)) => PartialOrd::partial_cmp(a, b),
+            _ => None,
+        }
+    }
 }
 
 use Expr::*;
@@ -122,13 +144,26 @@ pub enum Function {
     Dynamic(Box<Expr>),
 }
 
+use self::Function::*;
+
 impl PartialEq for Function {
-    fn eq(&self, _other: &Self) -> bool {
-        false
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Dynamic(a), Dynamic(b)) => a == b,
+            _ => false,
+        }
     }
 }
 
-#[derive(Clone, PartialEq)]
+impl Eq for Function {}
+
+impl PartialOrd for Function {
+    fn partial_cmp(&self, _other: &Self) -> Option<Ordering> {
+        None
+    }
+}
+
+#[derive(Clone, PartialEq, PartialOrd, Eq)]
 pub enum Arguments {
     Variadic,
     Fixed(Vec<String>),

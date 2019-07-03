@@ -23,6 +23,20 @@ pub fn load(env: &mut Env) {
         Fun(Function::Builtin(eq), Arguments::Variadic),
     );
     env.insert(
+        ">".to_string(),
+        Fun(
+            Function::Builtin(gt),
+            Arguments::Fixed(vec!["a".to_string(), "b".to_string()]),
+        ),
+    );
+    env.insert(
+        "<".to_string(),
+        Fun(
+            Function::Builtin(lt),
+            Arguments::Fixed(vec!["a".to_string(), "b".to_string()]),
+        ),
+    );
+    env.insert(
         "if".to_string(),
         Special(
             Function::Builtin(iff),
@@ -115,12 +129,27 @@ fn iff(env: &mut Env) -> Expr {
 fn eq(env: &mut Env) -> Expr {
     if let Some(List(args)) = env.get("varargs".to_string()) {
         match &args[..] {
+            [Nil] => Bool(false),
             [_head] => Bool(true),
             [head, tail..] => Bool(tail.iter().all(|ref x| *x == head)),
             [] => Error("eq requires a at least one argument".to_string()),
         }
     } else {
         Error("eq requires a at least one argument".to_string())
+    }
+}
+
+fn lt(env: &mut Env) -> Expr {
+    match (env.get("a".to_string()), env.get("b".to_string())) {
+        (Some(a), Some(b)) => Bool(a < b),
+        _ => Error("< requires two arguments".to_string()),
+    }
+}
+
+fn gt(env: &mut Env) -> Expr {
+    match (env.get("a".to_string()), env.get("b".to_string())) {
+        (Some(a), Some(b)) => Bool(a > b),
+        _ => Error("> requires two arguments".to_string()),
     }
 }
 
