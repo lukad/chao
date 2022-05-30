@@ -69,7 +69,7 @@ impl Env {
 
     fn eval_list(&mut self, list: &Vec<Expr>) -> Expr {
         match &list[..] {
-            [expr, rest..] => match self.eval(expr) {
+            [expr, rest @ ..] => match self.eval(expr) {
                 Fun(fun, arg_names) => {
                     let mut evaluated_args: Vec<Expr> = vec![];
                     self.enter();

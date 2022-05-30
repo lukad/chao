@@ -1,5 +1,3 @@
-#![feature(slice_patterns)]
-
 #[macro_use]
 extern crate combine;
 extern crate colored;

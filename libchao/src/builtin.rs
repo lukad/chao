@@ -82,7 +82,7 @@ fn sub(env: &mut Env) -> Expr {
     if let Some(List(args)) = env.get("varargs".to_string()) {
         match &args[..] {
             [x] => Int(0) - x.clone(),
-            [head, tail..] => tail.iter().fold(head.clone(), |acc, x| acc - x.clone()),
+            [head, tail @ ..] => tail.iter().fold(head.clone(), |acc, x| acc - x.clone()),
             [] => Error("sub requires at least one argument".to_string()),
         }
     } else {
@@ -102,7 +102,7 @@ fn div(env: &mut Env) -> Expr {
     if let Some(List(args)) = env.get("varargs".to_string()) {
         match &args[..] {
             [head] => Int(1) / head.clone(),
-            [head, tail..] => tail.iter().fold(head.clone(), |acc, x| acc / x.clone()),
+            [head, tail @ ..] => tail.iter().fold(head.clone(), |acc, x| acc / x.clone()),
             [] => Error("div requires at least one argument".to_string()),
         }
     } else {
@@ -131,7 +131,7 @@ fn eq(env: &mut Env) -> Expr {
         match &args[..] {
             [Nil] => Bool(false),
             [_head] => Bool(true),
-            [head, tail..] => Bool(tail.iter().all(|ref x| *x == head)),
+            [head, tail @ ..] => Bool(tail.iter().all(|ref x| *x == head)),
             [] => Error("eq requires a at least one argument".to_string()),
         }
     } else {
