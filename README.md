@@ -14,7 +14,7 @@ A simple lisp.
 
 ## Building
 
-1. [Install rust](https://www.rust-lang.org/en-US/install.html) nightly
+1. [Install rust](https://www.rust-lang.org/en-US/install.html)
 2. `git clone https://github.com/lukad/chao.git`
 3. `cd chao`
-4. `cargo +nightly build --release`
+4. `cargo build --release`
