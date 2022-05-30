@@ -6,9 +6,6 @@ description = "A simple lisp implementation"
 homepage = "https://github.com/lukad/chao"
 license = "MIT"
 
-[badges]
-travis-ci = { repository = "lukad/chao", branch = "master" }
-
 [dependencies]
 itertools = "^0.8"
 combine = "^3.2"

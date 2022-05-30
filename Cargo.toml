@@ -1,9 +1,6 @@
 [workspace]
 
-members = [
-    "chao",
-    "libchao",
-]
+members = ["chao", "libchao"]
 
 [profile.release]
 opt-level = 2
