@@ -6,7 +6,7 @@ A simple lisp.
 
 | Form     | Description                | Example               |
 |----------|----------------------------|-----------------------|
-| `lambda` | Define anonymous functions | `(lambda (x) (* x x)` |
+| `lambda` | Define anonymous functions | `(lambda (x) (* x x))`|
 | `set`    | Define variables           | `(set 'foo 42)`       |
 | `if`     | Conditional evaluation     | `(if true ":D" "D:")` |
 | `+-*/`   | Artithmetic operators      | `(+ 1 (/ 4 2.0))`     |
