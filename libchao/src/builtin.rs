@@ -114,7 +114,7 @@ fn div(env: &mut Env) -> Expr {
 
 fn iff(env: &mut Env) -> Expr {
     match (
-        env.get("cond".to_string()).and_then(|e| Some(env.eval(&e))),
+        env.get("cond".to_string()).map(|e| env.eval(&e)),
         env.get("expr1".to_string()),
         env.get("expr2".to_string()),
     ) {
@@ -133,7 +133,7 @@ fn eq(env: &mut Env) -> Expr {
         match &args[..] {
             [Nil] => Bool(false),
             [_head] => Bool(true),
-            [head, tail @ ..] => Bool(tail.iter().all(|ref x| *x == head)),
+            [head, tail @ ..] => Bool(tail.iter().all(|x| x == head)),
             [] => Error("eq requires a at least one argument".to_string()),
         }
     } else {

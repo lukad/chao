@@ -69,8 +69,8 @@ impl Env {
             .expect("Attempted to pop empty environment stack");
     }
 
-    fn eval_list(&mut self, list: &Vec<Expr>) -> Expr {
-        match &list[..] {
+    fn eval_list(&mut self, list: &[Expr]) -> Expr {
+        match &list {
             [expr, rest @ ..] => match self.eval(expr) {
                 Fun(fun, arg_names) => {
                     let mut evaluated_args: Vec<Expr> = vec![];
@@ -108,12 +108,18 @@ impl Env {
             Arguments::Variadic => self.insert("varargs".to_string(), List(exprs)),
             Arguments::Fixed(names) => {
                 if exprs.len() != names.len() {
-                    Error("Wrong argument count".to_string());
+                    panic!("Wrong argument count");
                 }
                 for (expr, name) in exprs.iter().zip(names) {
                     self.insert(name, expr.clone());
                 }
             }
         }
+    }
+}
+
+impl Default for Env {
+    fn default() -> Self {
+        Self::new()
     }
 }

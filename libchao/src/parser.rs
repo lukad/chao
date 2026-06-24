@@ -1,5 +1,3 @@
-use std::i64;
-
 use combine::char::{char as c, digit, hex_digit, letter, spaces, string};
 use combine::error::{Consumed, ParseResult};
 use combine::{
@@ -84,7 +82,7 @@ where
         }
     });
 
-    between(c('"'), c('"').skip(spaces()), many(string_char)).map(|s| Str(s))
+    between(c('"'), c('"').skip(spaces()), many(string_char)).map(Str)
 }
 
 fn nil<I>() -> impl Parser<Input = I, Output = Expr>
