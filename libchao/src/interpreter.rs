@@ -19,6 +19,14 @@ pub enum EvalError {
     CanOnlyApplyFunctions,
     #[error("type error")]
     TypeError,
+    #[error("def name must be a symbol")]
+    DefNameMustBeSymbol,
+    #[error("missing argument")]
+    ArgumentError,
+    #[error("def param must be a symbol")]
+    DefParamMustBeSymbol,
+    #[error("unbound variable")]
+    UnboundVariable,
 }
 
 pub type EvalResult<T> = Result<T, EvalError>;
@@ -45,7 +53,7 @@ impl Interpreter {
         self.with_env(self.env.child(), f)
     }
 
-    fn with_env<T>(
+    pub(crate) fn with_env<T>(
         &mut self,
         env: Env,
         f: impl FnOnce(&mut Self) -> EvalResult<T>,

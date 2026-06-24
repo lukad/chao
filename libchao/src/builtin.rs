@@ -66,7 +66,7 @@ pub fn load(env: &mut Env) {
     );
     env.insert(
         "set".to_string(),
-        Fun(
+        Special(
             Function::Builtin(Rc::new(set)),
             Arguments::Fixed(vec!["name".to_string(), "value".to_string()]),
         ),
@@ -77,6 +77,10 @@ pub fn load(env: &mut Env) {
             Function::Builtin(Rc::new(intern)),
             Arguments::Fixed(vec!["string".to_string()]),
         ),
+    );
+    env.insert(
+        "def".to_string(),
+        Special(Function::Builtin(Rc::new(def)), Arguments::Variadic),
     );
 }
 
@@ -199,13 +203,30 @@ fn lambda(interpreter: &mut Interpreter) -> EvalResult<Expr> {
 }
 
 fn set(interpreter: &mut Interpreter) -> EvalResult<Expr> {
-    match (
-        interpreter.env.get("name").unwrap(),
-        interpreter.env.get("value").unwrap(),
-    ) {
-        (Symbol(s), expr) => {
-            interpreter.env.insert_in_enclosing(s, expr.clone());
-            Ok(expr)
+    let name = interpreter
+        .env
+        .get("name")
+        .ok_or(EvalError::ArgumentError)?;
+    let value_expr = interpreter
+        .env
+        .get("value")
+        .ok_or(EvalError::ArgumentError)?;
+    let caller_env = interpreter
+        .env
+        .enclosing()
+        .ok_or(EvalError::UnboundVariable)?;
+
+    match name {
+        Symbol(name) => {
+            let value = interpreter.with_env(caller_env.clone(), |interpreter| {
+                interpreter.eval(&value_expr)
+            })?;
+
+            if caller_env.assign(&name, value.clone()) {
+                Ok(value)
+            } else {
+                Err(EvalError::UnboundVariable)
+            }
         }
         _ => Err(EvalError::VariableNameMustBeSymbol),
     }
@@ -215,5 +236,46 @@ fn intern(interpreter: &mut Interpreter) -> EvalResult<Expr> {
     match interpreter.env.get("string").unwrap() {
         Str(s) => Ok(Symbol(s)),
         _ => Err(EvalError::CanOnlyInterStrings),
+    }
+}
+
+fn def(interpreter: &mut Interpreter) -> EvalResult<Expr> {
+    let Some(List(args)) = interpreter.env.get("varargs") else {
+        return Err(EvalError::ArgumentError);
+    };
+
+    match &args[..] {
+        [Symbol(name), value] => {
+            let value = interpreter.eval(value)?;
+            interpreter
+                .env
+                .insert_in_enclosing(name.clone(), value.clone());
+            Ok(value)
+        }
+        [Symbol(name), List(params), body] => {
+            let mut arg_names = vec![];
+            for param in params {
+                let Symbol(name) = param else {
+                    return Err(EvalError::DefParamMustBeSymbol);
+                };
+                arg_names.push(name.clone());
+            }
+
+            let captured_env = interpreter
+                .env
+                .enclosing()
+                .unwrap_or_else(|| interpreter.env.clone());
+
+            let value = Fun(
+                Function::Dynamic(Box::new(body.clone()), captured_env),
+                Arguments::Fixed(arg_names),
+            );
+
+            interpreter
+                .env
+                .insert_in_enclosing(name.clone(), value.clone());
+            Ok(value)
+        }
+        _ => Err(EvalError::ArgumentError),
     }
 }

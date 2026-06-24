@@ -40,6 +40,28 @@ impl Env {
         }
     }
 
+    pub fn assign(&self, key: &str, value: Expr) -> bool {
+        {
+            let mut inner = self.inner.borrow_mut();
+            if inner.values.contains_key(key) {
+                inner.values.insert(key.to_string(), value);
+                return true;
+            }
+        }
+
+        match self.inner.borrow().enclosing.clone() {
+            Some(env) => env.assign(key, value),
+            None => false,
+        }
+    }
+
+    pub fn assign_in_enclosing(&self, key: &str, value: Expr) -> bool {
+        match self.inner.borrow().enclosing.clone() {
+            Some(env) => env.assign(key, value),
+            None => false,
+        }
+    }
+
     pub fn get(&self, key: &str) -> Option<Expr> {
         if let Some(expr) = self.inner.borrow().values.get(key) {
             return Some(expr.clone());

@@ -4,13 +4,15 @@ A simple lisp.
 
 ## Builtins
 
-| Form     | Description                | Example               |
-|----------|----------------------------|-----------------------|
-| `lambda` | Define anonymous functions | `(lambda (x) (* x x))`|
-| `set`    | Define variables           | `(set 'foo 42)`       |
-| `if`     | Conditional evaluation     | `(if true ":D" "D:")` |
-| `+-*/`   | Artithmetic operators      | `(+ 1 (/ 4 2.0))`     |
-| `=`      | Comparison                 | `(= 1 2)`             |
+| Form     | Description                | Example                    |
+|----------|----------------------------|----------------------------|
+| `lambda` | Create anonymous functions | `(lambda (x) (* x x))`     |
+| `def`    | Define variable            | `(def foo 42)`             |
+| `def`    | Define functions           | `(def square (x) (* x x))` |
+| `set`    | Define variables           | `(set foo 42)`             |
+| `if`     | Conditional evaluation     | `(if true ":D" "D:")`      |
+| `+-*/`   | Artithmetic operators      | `(+ 1 (/ 4 2.0))`          |
+| `=`      | Comparison                 | `(= 1 2)`                  |
 
 ## Building
 
