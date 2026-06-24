@@ -8,6 +8,6 @@ license = "MIT"
 edition = "2024"
 
 [dependencies]
-itertools = "^0.8"
+itertools = "0.15"
 combine = "^3.2"
 colored = "^1.6"
