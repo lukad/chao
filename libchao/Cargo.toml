@@ -10,4 +10,4 @@ edition = "2024"
 [dependencies]
 itertools = "0.15"
 combine = "^3.2"
-colored = "^1.6"
+colored = "3"
