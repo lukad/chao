@@ -1,8 +1,13 @@
 use std::rc::Rc;
 
 use crate::{
+    Interpreter,
     env::Env,
-    expr::{Arguments, Expr, Expr::*, Function},
+    expr::{
+        Arguments,
+        Expr::{self, *},
+        Function,
+    },
 };
 
 pub fn load(env: &mut Env) {
@@ -74,16 +79,16 @@ pub fn load(env: &mut Env) {
     );
 }
 
-fn add(env: &mut Env) -> Expr {
-    if let Some(List(args)) = env.get("varargs".to_string()) {
+fn add(interpreter: &mut Interpreter) -> Expr {
+    if let Some(List(args)) = interpreter.env.get("varargs") {
         args.iter().fold(Int(0), |acc, x| acc + x.clone())
     } else {
         Error("could not fetch arguments".to_string())
     }
 }
 
-fn sub(env: &mut Env) -> Expr {
-    if let Some(List(args)) = env.get("varargs".to_string()) {
+fn sub(interpreter: &mut Interpreter) -> Expr {
+    if let Some(List(args)) = interpreter.env.get("varargs") {
         match &args[..] {
             [x] => Int(0) - x.clone(),
             [head, tail @ ..] => tail.iter().fold(head.clone(), |acc, x| acc - x.clone()),
@@ -94,16 +99,16 @@ fn sub(env: &mut Env) -> Expr {
     }
 }
 
-fn mul(env: &mut Env) -> Expr {
-    if let Some(List(args)) = env.get("varargs".to_string()) {
+fn mul(interpreter: &mut Interpreter) -> Expr {
+    if let Some(List(args)) = interpreter.env.get("varargs") {
         args.iter().fold(Int(1), |acc, x| acc * x.clone())
     } else {
         Error("could not fetch arguments".to_string())
     }
 }
 
-fn div(env: &mut Env) -> Expr {
-    if let Some(List(args)) = env.get("varargs".to_string()) {
+fn div(interpreter: &mut Interpreter) -> Expr {
+    if let Some(List(args)) = interpreter.env.get("varargs") {
         match &args[..] {
             [head] => Int(1) / head.clone(),
             [head, tail @ ..] => tail.iter().fold(head.clone(), |acc, x| acc / x.clone()),
@@ -114,24 +119,24 @@ fn div(env: &mut Env) -> Expr {
     }
 }
 
-fn iff(env: &mut Env) -> Expr {
+fn iff(interpreter: &mut Interpreter) -> Expr {
     match (
-        env.get("cond".to_string()).map(|e| env.eval(&e)),
-        env.get("expr1".to_string()),
-        env.get("expr2".to_string()),
+        interpreter.env.get("cond").map(|e| interpreter.eval(&e)),
+        interpreter.env.get("expr1"),
+        interpreter.env.get("expr2"),
     ) {
         (Some(Error(e)), _, _) => Error(e),
         (Some(cond), Some(expr1), Some(expr2)) => match cond {
-            Bool(true) => env.eval(&expr1),
-            Bool(false) => env.eval(&expr2),
+            Bool(true) => interpreter.eval(&expr1),
+            Bool(false) => interpreter.eval(&expr2),
             _ => Error("not a bool".to_string()),
         },
         _ => Error("not enough arguments supplied to if".to_string()),
     }
 }
 
-fn eq(env: &mut Env) -> Expr {
-    if let Some(List(args)) = env.get("varargs".to_string()) {
+fn eq(interpreter: &mut Interpreter) -> Expr {
+    if let Some(List(args)) = interpreter.env.get("varargs") {
         match &args[..] {
             [Nil] => Bool(false),
             [_head] => Bool(true),
@@ -143,23 +148,23 @@ fn eq(env: &mut Env) -> Expr {
     }
 }
 
-fn lt(env: &mut Env) -> Expr {
-    match (env.get("a".to_string()), env.get("b".to_string())) {
+fn lt(interpreter: &mut Interpreter) -> Expr {
+    match (interpreter.env.get("a"), interpreter.env.get("b")) {
         (Some(a), Some(b)) => Bool(a < b),
         _ => Error("< requires two arguments".to_string()),
     }
 }
 
-fn gt(env: &mut Env) -> Expr {
-    match (env.get("a".to_string()), env.get("b".to_string())) {
+fn gt(interpreter: &mut Interpreter) -> Expr {
+    match (interpreter.env.get("a"), interpreter.env.get("b")) {
         (Some(a), Some(b)) => Bool(a > b),
         _ => Error("> requires two arguments".to_string()),
     }
 }
 
-fn lambda(env: &mut Env) -> Expr {
-    let body = env.get("body".to_string()).unwrap();
-    match env.get("args".to_string()).unwrap() {
+fn lambda(interpreter: &mut Interpreter) -> Expr {
+    let body = interpreter.env.get("body").unwrap();
+    match interpreter.env.get("args").unwrap() {
         List(args) => {
             let mut arguments = vec![];
             for arg in args.iter() {
@@ -168,31 +173,46 @@ fn lambda(env: &mut Env) -> Expr {
                     _ => return Error("lambda arguments must be symbols".to_string()),
                 }
             }
+
+            let captured_env = interpreter
+                .env
+                .enclosing()
+                .unwrap_or_else(|| interpreter.env.clone());
+
             Fun(
-                Function::Dynamic(Box::new(body)),
+                Function::Dynamic(Box::new(body), captured_env),
                 Arguments::Fixed(arguments),
             )
         }
-        Nil => Fun(Function::Dynamic(Box::new(body)), Arguments::Fixed(vec![])),
+        Nil => {
+            let captured_env = interpreter
+                .env
+                .enclosing()
+                .unwrap_or_else(|| interpreter.env.clone());
+            Fun(
+                Function::Dynamic(Box::new(body), captured_env),
+                Arguments::Fixed(vec![]),
+            )
+        }
         _ => Error("First lambda argument must be a list of argument names".to_string()),
     }
 }
 
-fn set(env: &mut Env) -> Expr {
+fn set(interpreter: &mut Interpreter) -> Expr {
     match (
-        env.get("name".to_string()).unwrap(),
-        env.get("value".to_string()).unwrap(),
+        interpreter.env.get("name").unwrap(),
+        interpreter.env.get("value").unwrap(),
     ) {
         (Symbol(s), expr) => {
-            env.insert_parent(s, expr.clone());
+            interpreter.env.insert_in_enclosing(s, expr.clone());
             expr
         }
         (other, _) => Error(format!("Variable name is not a symbol: {:?}", other)),
     }
 }
 
-fn intern(env: &mut Env) -> Expr {
-    match env.get("string".to_string()).unwrap() {
+fn intern(interpreter: &mut Interpreter) -> Expr {
+    match interpreter.env.get("string").unwrap() {
         Str(s) => Symbol(s),
         other => Error(format!("Can't intern {:?}", other)),
     }

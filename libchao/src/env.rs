@@ -1,119 +1,63 @@
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{
-    builtin,
-    expr::{
-        Arguments,
-        Expr::{self, *},
-        Function,
-    },
-};
+use crate::expr::Expr;
 
-type Data = HashMap<String, Expr>;
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Env {
-    stack: Vec<Data>,
+    inner: Rc<RefCell<EnvInner>>,
+}
+
+#[derive(Debug, Clone, Default)]
+struct EnvInner {
+    values: HashMap<String, Expr>,
+    enclosing: Option<Env>,
 }
 
 impl Env {
     pub fn new() -> Self {
-        let mut e = Env {
-            stack: vec![HashMap::new()],
-        };
-        builtin::load(&mut e);
-        e
-    }
-
-    pub fn eval(&mut self, value: &Expr) -> Expr {
-        match value {
-            Nil => Nil,
-            Int(x) => Int(*x),
-            Float(x) => Float(*x),
-            Bool(x) => Bool(*x),
-            Str(x) => Str(x.clone()),
-            Symbol(x) => self.get(x.clone()).unwrap_or(Nil),
-            Quote(x) => *x.clone(),
-            Fun(f, args) => Fun(f.clone(), args.clone()),
-            Special(f, args) => Fun(f.clone(), args.clone()),
-            List(list) => self.eval_list(list),
-            Error(_) => value.clone(),
+        Env {
+            inner: Default::default(),
         }
     }
 
-    pub fn insert_parent(&mut self, key: String, value: Expr) {
-        self.stack[0].insert(key, value);
+    pub fn enclosing(&self) -> Option<Env> {
+        self.inner.borrow().enclosing.clone()
     }
 
     pub fn insert(&mut self, key: String, value: Expr) {
-        let index = self.stack.len() - 1;
-        self.stack[index].insert(key, value);
+        let mut inner = self.inner.borrow_mut();
+        inner.values.insert(key, value);
     }
 
-    pub fn get(&self, key: String) -> Option<Expr> {
-        for data in self.stack.iter().rev() {
-            if data.contains_key(&key) {
-                return data.get(&key).cloned();
+    pub fn insert_in_enclosing(&self, key: String, value: Expr) {
+        let enclosing = self.inner.borrow().enclosing.clone();
+
+        match enclosing {
+            Some(mut env) => {
+                env.insert(key, value);
             }
-        }
-        None
-    }
-
-    fn enter(&mut self) {
-        self.stack.push(HashMap::new())
-    }
-
-    fn exit(&mut self) {
-        self.stack
-            .pop()
-            .expect("Attempted to pop empty environment stack");
-    }
-
-    fn eval_list(&mut self, list: &[Expr]) -> Expr {
-        match &list {
-            [expr, rest @ ..] => match self.eval(expr) {
-                Fun(fun, arg_names) => {
-                    let mut evaluated_args: Vec<Expr> = vec![];
-                    self.enter();
-                    for expr in rest.iter() {
-                        evaluated_args.push(self.eval(expr));
-                    }
-                    self.bind_args(evaluated_args, arg_names.clone());
-                    let result = self.eval_fun(fun.clone());
-                    self.exit();
-                    result
-                }
-                Special(fun, arg_names) => {
-                    self.enter();
-                    self.bind_args(rest.to_vec(), arg_names.clone());
-                    let result = self.eval_fun(fun.clone());
-                    self.exit();
-                    result
-                }
-                other => Error(format!("Can't apply {:?} ({:?})", expr, other)),
-            },
-            [] => Nil,
+            None => panic!("No enclosing environment"),
         }
     }
 
-    fn eval_fun(&mut self, fun: Function) -> Expr {
-        match fun {
-            Function::Builtin(builtin) => builtin(self),
-            Function::Dynamic(expr) => self.eval(&expr),
+    pub fn get(&self, key: &str) -> Option<Expr> {
+        if let Some(expr) = self.inner.borrow().values.get(key) {
+            return Some(expr.clone());
         }
+
+        self.inner
+            .borrow()
+            .enclosing
+            .as_ref()
+            .and_then(|e| e.get(key))
     }
 
-    fn bind_args(&mut self, exprs: Vec<Expr>, args: Arguments) {
-        match args {
-            Arguments::Variadic => self.insert("varargs".to_string(), List(exprs)),
-            Arguments::Fixed(names) => {
-                if exprs.len() != names.len() {
-                    panic!("Wrong argument count");
-                }
-                for (expr, name) in exprs.iter().zip(names) {
-                    self.insert(name, expr.clone());
-                }
-            }
+    pub fn child(&self) -> Self {
+        Self {
+            inner: Rc::new(RefCell::new(EnvInner {
+                values: HashMap::new(),
+                enclosing: Some(self.clone()),
+            })),
         }
     }
 }

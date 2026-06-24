@@ -1,21 +1,21 @@
 extern crate libchao;
 extern crate rustyline;
 
-use rustyline::{error::ReadlineError, DefaultEditor};
+use rustyline::{DefaultEditor, error::ReadlineError};
 
-use libchao::{parse, Env};
+use libchao::{Interpreter, parse};
 
 fn main() {
     let mut rl = DefaultEditor::new().unwrap();
     rl.load_history(".chaohistory").unwrap_or_default();
-    let mut env = Env::new();
+    let mut interpreter = Interpreter::new();
     loop {
         let readline = rl.readline("chao> ");
         match readline {
             Ok(line) => {
                 rl.add_history_entry(&line).unwrap();
                 match parse(&line) {
-                    Ok(expr) => println!("=> {}", env.eval(&expr)),
+                    Ok(expr) => println!("=> {}", interpreter.eval(&expr)),
                     Err(err) => println!("{:?}", err),
                 }
             }

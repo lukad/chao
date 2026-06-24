@@ -6,7 +6,7 @@ use std::rc::Rc;
 use colored::*;
 use itertools::Itertools;
 
-use crate::env::Env;
+use crate::{Env, Interpreter};
 
 #[derive(Clone, PartialEq)]
 pub enum Expr {
@@ -139,8 +139,8 @@ impl Div for Expr {
 
 #[derive(Clone)]
 pub enum Function {
-    Builtin(Rc<dyn Fn(&mut Env) -> Expr>),
-    Dynamic(Box<Expr>),
+    Builtin(Rc<dyn Fn(&mut Interpreter) -> Expr>),
+    Dynamic(Box<Expr>, Env),
 }
 
 use self::Function::*;
@@ -148,7 +148,7 @@ use self::Function::*;
 impl PartialEq for Function {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Dynamic(a), Dynamic(b)) => a == b,
+            (Dynamic(a, _), Dynamic(b, _)) => a == b,
             (Builtin(a), Builtin(b)) => Rc::ptr_eq(a, b),
             _ => false,
         }
