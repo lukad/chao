@@ -1,6 +1,6 @@
 [workspace]
-
 members = ["chao", "libchao"]
+resolver = "3"
 
 [profile.release]
 opt-level = 2
