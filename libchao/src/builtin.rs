@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::{
     env::Env,
     expr::{Arguments, Expr, Expr::*, Function},
@@ -6,42 +8,42 @@ use crate::{
 pub fn load(env: &mut Env) {
     env.insert(
         "+".to_string(),
-        Fun(Function::Builtin(add), Arguments::Variadic),
+        Fun(Function::Builtin(Rc::new(add)), Arguments::Variadic),
     );
     env.insert(
         "-".to_string(),
-        Fun(Function::Builtin(sub), Arguments::Variadic),
+        Fun(Function::Builtin(Rc::new(sub)), Arguments::Variadic),
     );
     env.insert(
         "*".to_string(),
-        Fun(Function::Builtin(mul), Arguments::Variadic),
+        Fun(Function::Builtin(Rc::new(mul)), Arguments::Variadic),
     );
     env.insert(
         "/".to_string(),
-        Fun(Function::Builtin(div), Arguments::Variadic),
+        Fun(Function::Builtin(Rc::new(div)), Arguments::Variadic),
     );
     env.insert(
         "=".to_string(),
-        Fun(Function::Builtin(eq), Arguments::Variadic),
+        Fun(Function::Builtin(Rc::new(eq)), Arguments::Variadic),
     );
     env.insert(
         ">".to_string(),
         Fun(
-            Function::Builtin(gt),
+            Function::Builtin(Rc::new(gt)),
             Arguments::Fixed(vec!["a".to_string(), "b".to_string()]),
         ),
     );
     env.insert(
         "<".to_string(),
         Fun(
-            Function::Builtin(lt),
+            Function::Builtin(Rc::new(lt)),
             Arguments::Fixed(vec!["a".to_string(), "b".to_string()]),
         ),
     );
     env.insert(
         "if".to_string(),
         Special(
-            Function::Builtin(iff),
+            Function::Builtin(Rc::new(iff)),
             Arguments::Fixed(vec![
                 "cond".to_string(),
                 "expr1".to_string(),
@@ -52,21 +54,21 @@ pub fn load(env: &mut Env) {
     env.insert(
         "lambda".to_string(),
         Special(
-            Function::Builtin(lambda),
+            Function::Builtin(Rc::new(lambda)),
             Arguments::Fixed(vec!["args".to_string(), "body".to_string()]),
         ),
     );
     env.insert(
         "set".to_string(),
         Fun(
-            Function::Builtin(set),
+            Function::Builtin(Rc::new(set)),
             Arguments::Fixed(vec!["name".to_string(), "value".to_string()]),
         ),
     );
     env.insert(
         "intern".to_string(),
         Fun(
-            Function::Builtin(intern),
+            Function::Builtin(Rc::new(intern)),
             Arguments::Fixed(vec!["string".to_string()]),
         ),
     );

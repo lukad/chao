@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::fmt;
 use std::ops::{Add, Div, Mul, Sub};
+use std::rc::Rc;
 
 use colored::*;
 use itertools::Itertools;
@@ -21,8 +22,6 @@ pub enum Expr {
     List(Vec<Expr>),
     Error(String),
 }
-
-impl Eq for Expr {}
 
 impl PartialOrd for Expr {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -140,7 +139,7 @@ impl Div for Expr {
 
 #[derive(Clone)]
 pub enum Function {
-    Builtin(fn(&mut Env) -> Expr),
+    Builtin(Rc<dyn Fn(&mut Env) -> Expr>),
     Dynamic(Box<Expr>),
 }
 
@@ -150,6 +149,7 @@ impl PartialEq for Function {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Dynamic(a), Dynamic(b)) => a == b,
+            (Builtin(a), Builtin(b)) => Rc::ptr_eq(a, b),
             _ => false,
         }
     }
