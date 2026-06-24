@@ -8,5 +8,5 @@ license = "MIT"
 edition = "2024"
 
 [dependencies]
-rustyline = "1.0"
+rustyline = "18.0"
 libchao = { path = "../libchao", version = "0.1.0" }
