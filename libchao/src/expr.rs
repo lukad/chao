@@ -6,6 +6,7 @@ use std::rc::Rc;
 use colored::*;
 use itertools::Itertools;
 
+use crate::interpreter::{EvalError, EvalResult};
 use crate::{Env, Interpreter};
 
 #[derive(Clone, PartialEq)]
@@ -20,7 +21,16 @@ pub enum Expr {
     Fun(Function, Arguments),
     Special(Function, Arguments),
     List(Vec<Expr>),
-    Error(String),
+}
+
+impl Expr {
+    pub fn is_truthy(&self) -> bool {
+        !matches!(self, Nil | Bool(false))
+    }
+
+    pub fn is_falsy(&self) -> bool {
+        matches!(self, Nil | Bool(false))
+    }
 }
 
 impl PartialOrd for Expr {
@@ -57,7 +67,6 @@ impl fmt::Debug for Expr {
             Fun(_, args) => write!(f, "<function {:?}>", args),
             Special(_, _) => write!(f, "<special>"),
             List(xs) => write!(f, "({})", xs.iter().map(|x| format!("{:?}", x)).join(" ")),
-            Error(err) => write!(f, "ERROR: {}", err),
         }
     }
 }
@@ -75,71 +84,86 @@ impl fmt::Display for Expr {
             Fun(_, _) => write!(f, "{}", format!("{:?}", self).magenta()),
             Special(_, _) => write!(f, "{}", format!("{:?}", self).magenta()),
             List(xs) => write!(f, "({})", xs.iter().map(|x| format!("{}", x)).join(" ")),
-            Error(_) => write!(f, "{}", format!("{:?}", self).red()),
         }
     }
 }
 
 impl Add for Expr {
-    type Output = Self;
+    type Output = EvalResult<Self>;
 
-    fn add(self, other: Self) -> Self {
-        match (self, other) {
+    fn add(self, other: Self) -> Self::Output {
+        let sum = match (self, other) {
             (Int(a), Int(b)) => Int(a + b),
             (Int(a), Float(b)) => Float(a as f64 + b),
             (Float(a), Int(b)) => Float(a + b as f64),
             (Float(a), Float(b)) => Float(a + b),
             (Str(a), Str(b)) => Str(format!("{}{}", a, b)),
-            (a, b) => Error(format!("Can't add {:?} and {:?}", a, b)),
-        }
+            (_, _) => {
+                return Err(EvalError::TypeError);
+            }
+        };
+        Ok(sum)
     }
 }
 
 impl Sub for Expr {
-    type Output = Self;
+    type Output = EvalResult<Self>;
 
-    fn sub(self, other: Self) -> Self {
-        match (self, other) {
+    fn sub(self, other: Self) -> Self::Output {
+        let diff = match (self, other) {
             (Int(a), Int(b)) => Int(a - b),
             (Int(a), Float(b)) => Float(a as f64 - b),
             (Float(a), Int(b)) => Float(a - b as f64),
             (Float(a), Float(b)) => Float(a - b),
-            (a, b) => Error(format!("Can't subtract {:?} from {:?}", b, a)),
-        }
+            (_, _) => {
+                return Err(EvalError::TypeError);
+            }
+        };
+        Ok(diff)
     }
 }
 
 impl Mul for Expr {
-    type Output = Self;
+    type Output = EvalResult<Self>;
 
-    fn mul(self, other: Self) -> Self {
-        match (self, other) {
+    fn mul(self, other: Self) -> Self::Output {
+        let product = match (self, other) {
             (Int(a), Int(b)) => Int(a * b),
             (Int(a), Float(b)) => Float(a as f64 * b),
             (Float(a), Int(b)) => Float(a * b as f64),
             (Float(a), Float(b)) => Float(a * b),
-            (a, b) => Error(format!("Can't multiply {:?} with {:?}", a, b)),
-        }
+            (_, _) => {
+                return Err(EvalError::TypeError);
+            }
+        };
+        Ok(product)
     }
 }
 
 impl Div for Expr {
-    type Output = Self;
+    type Output = EvalResult<Self>;
 
-    fn div(self, other: Self) -> Self {
-        match (self, other) {
+    fn div(self, other: Self) -> Self::Output {
+        let quotient = match (self, other) {
             (Int(a), Int(b)) => Int(a / b),
             (Int(a), Float(b)) => Float(a as f64 / b),
             (Float(a), Int(b)) => Float(a / b as f64),
             (Float(a), Float(b)) => Float(a / b),
-            (a, b) => Error(format!("Can't divide {:?} by {:?}", a, b)),
-        }
+            (_, _) => {
+                return Err(EvalError::TypeError);
+            }
+        };
+        Ok(quotient)
     }
 }
 
+pub trait BuiltinFun<T>: Fn(&mut Interpreter) -> EvalResult<T> {}
+
+impl<F: Fn(&mut Interpreter) -> EvalResult<Expr>> BuiltinFun<Expr> for F {}
+
 #[derive(Clone)]
 pub enum Function {
-    Builtin(Rc<dyn Fn(&mut Interpreter) -> Expr>),
+    Builtin(Rc<dyn BuiltinFun<Expr>>),
     Dynamic(Box<Expr>, Env),
 }
 
