@@ -1,6 +1,5 @@
-#[macro_use]
-extern crate combine;
 extern crate colored;
+extern crate combine;
 extern crate itertools;
 
 mod builtin;

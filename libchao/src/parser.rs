@@ -1,16 +1,16 @@
-use combine::char::{char as c, digit, hex_digit, letter, spaces, string};
-use combine::error::{Consumed, ParseResult};
+use combine::error::{Commit, ParseError, StdParseResult};
+use combine::parser::char::{char as c, digit, hex_digit, letter, spaces, string};
 use combine::{
-    ParseError, Parser, Stream, any, attempt, between, choice, eof, many, many1, one_of, optional,
+    EasyParser, Parser, Stream, any, attempt, between, choice, eof, many, many1, one_of, optional,
     parser, satisfy_map,
 };
 
 use crate::expr::Expr::{self, *};
 
-fn int<I>() -> impl Parser<Input = I, Output = Expr>
+fn int<I>() -> impl Parser<I, Output = Expr>
 where
-    I: Stream<Item = char>,
-    I::Error: ParseError<I::Item, I::Range, I::Position>,
+    I: Stream<Token = char>,
+    I::Error: ParseError<I::Token, I::Range, I::Position>,
 {
     let binary = (string("0b"), many1(one_of("01".chars())))
         .map(|(_, s): (_, String)| i64::from_str_radix(&s, 2).unwrap());
@@ -25,10 +25,10 @@ where
         .map(Int)
 }
 
-fn float<I>() -> impl Parser<Input = I, Output = Expr>
+fn float<I>() -> impl Parser<I, Output = Expr>
 where
-    I: Stream<Item = char>,
-    I::Error: ParseError<I::Item, I::Range, I::Position>,
+    I: Stream<Token = char>,
+    I::Error: ParseError<I::Token, I::Range, I::Position>,
 {
     attempt((many1(digit()), string("."), many1(digit())))
         .skip(spaces())
@@ -37,34 +37,34 @@ where
         })
 }
 
-fn boolean<I>() -> impl Parser<Input = I, Output = Expr>
+fn boolean<I>() -> impl Parser<I, Output = Expr>
 where
-    I: Stream<Item = char>,
-    I::Error: ParseError<I::Item, I::Range, I::Position>,
+    I: Stream<Token = char>,
+    I::Error: ParseError<I::Token, I::Range, I::Position>,
 {
     let t = || string("true").map(|_| Bool(true));
     let f = || string("false").map(|_| Bool(false));
     (attempt(choice((t(), f()))), spaces()).map(|(b, _)| b)
 }
 
-fn symbol<I>() -> impl Parser<Input = I, Output = Expr>
+fn symbol<I>() -> impl Parser<I, Output = Expr>
 where
-    I: Stream<Item = char>,
-    I::Error: ParseError<I::Item, I::Range, I::Position>,
+    I: Stream<Token = char>,
+    I::Error: ParseError<I::Token, I::Range, I::Position>,
 {
     many1(letter().or(one_of("+-*/^&|%!=><".chars())))
         .skip(spaces())
         .map(Symbol)
 }
 
-fn sstring<I>() -> impl Parser<Input = I, Output = Expr>
+fn sstring<I>() -> impl Parser<I, Output = Expr>
 where
-    I: Stream<Item = char>,
-    I::Error: ParseError<I::Item, I::Range, I::Position>,
+    I: Stream<Token = char>,
+    I::Error: ParseError<I::Token, I::Range, I::Position>,
 {
     let string_char = parser(|input: &mut I| {
-        let result: ParseResult<char, I> = any().parse_lazy(input).into();
-        let (c, consumed) = result?;
+        let result: StdParseResult<char, I> = any().parse_stream(input).into_result();
+        let (c, committed) = result?;
         let mut back_slash_char = satisfy_map(|c| {
             Some(match c {
                 '"' => '"',
@@ -76,19 +76,19 @@ where
             })
         });
         match c {
-            '\\' => consumed.combine(|_| back_slash_char.parse_stream(input)),
-            '"' => Err(Consumed::Empty(I::Error::empty(input.position()).into())),
-            _ => Ok((c, consumed)),
+            '\\' => committed.combine(|_| back_slash_char.parse_stream(input).into_result()),
+            '"' => Err(Commit::Peek(I::Error::empty(input.position()).into())),
+            _ => Ok((c, committed)),
         }
     });
 
     between(c('"'), c('"').skip(spaces()), many(string_char)).map(Str)
 }
 
-fn nil<I>() -> impl Parser<Input = I, Output = Expr>
+fn nil<I>() -> impl Parser<I, Output = Expr>
 where
-    I: Stream<Item = char>,
-    I::Error: ParseError<I::Item, I::Range, I::Position>,
+    I: Stream<Token = char>,
+    I::Error: ParseError<I::Token, I::Range, I::Position>,
 {
     attempt(string("nil")).skip(spaces()).map(|_| Nil)
 }
@@ -96,7 +96,7 @@ where
 parser! {
     #[inline(always)]
     fn expr[I]()(I) -> Expr
-    where [I: Stream<Item = char>]
+    where [I: Stream<Token = char>]
     {
         let empty_list = attempt((c('('), spaces(), c(')'), spaces())).map(|_| Nil);
         let list = between(c('(').skip(spaces()), c(')'), many(expr()))
