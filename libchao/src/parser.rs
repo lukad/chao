@@ -1,13 +1,13 @@
 use std::i64;
 
 use combine::char::{char as c, digit, hex_digit, letter, spaces, string};
-use combine::error::Consumed;
+use combine::error::{Consumed, ParseResult};
 use combine::{
-    any, attempt, between, choice, eof, many, many1, one_of, optional, parser, satisfy_map,
-    ParseError, Parser, Stream,
+    ParseError, Parser, Stream, any, attempt, between, choice, eof, many, many1, one_of, optional,
+    parser, satisfy_map,
 };
 
-use expr::Expr::{self, *};
+use crate::expr::Expr::{self, *};
 
 fn int<I>() -> impl Parser<Input = I, Output = Expr>
 where
@@ -65,7 +65,8 @@ where
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     let string_char = parser(|input: &mut I| {
-        let (c, consumed) = try!(any().parse_lazy(input).into());
+        let result: ParseResult<char, I> = any().parse_lazy(input).into();
+        let (c, consumed) = result?;
         let mut back_slash_char = satisfy_map(|c| {
             Some(match c {
                 '"' => '"',

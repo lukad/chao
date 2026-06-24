@@ -1,11 +1,11 @@
 use std::cmp::Ordering;
+use std::fmt;
 use std::ops::{Add, Div, Mul, Sub};
 
 use colored::*;
 use itertools::Itertools;
 
-use env::Env;
-use std::fmt;
+use crate::env::Env;
 
 #[derive(Clone, PartialEq)]
 pub enum Expr {

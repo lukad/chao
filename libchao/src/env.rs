@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 
-use builtin;
-use expr::{
-    Arguments,
-    Expr::{self, *},
-    Function,
+use crate::{
+    builtin,
+    expr::{
+        Arguments,
+        Expr::{self, *},
+        Function,
+    },
 };
 
 type Data = HashMap<String, Expr>;

@@ -1,5 +1,7 @@
-use env::Env;
-use expr::{Arguments, Expr, Expr::*, Function};
+use crate::{
+    env::Env,
+    expr::{Arguments, Expr, Expr::*, Function},
+};
 
 pub fn load(env: &mut Env) {
     env.insert(

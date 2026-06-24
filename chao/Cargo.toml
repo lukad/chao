@@ -5,6 +5,7 @@ authors = ["Luka Dornhecker <luka.dornhecker@gmail.com>"]
 description = "A simple lisp repl"
 homepage = "https://github.com/lukad/chao"
 license = "MIT"
+edition = "2024"
 
 [dependencies]
 rustyline = "1.0"
