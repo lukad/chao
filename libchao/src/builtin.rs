@@ -2,7 +2,7 @@ use crate::{
     Interpreter,
     env::Env,
     expr::Expr::{self, *},
-    functions::{Arity, Builtin, Callable, EvalMode, Lambda, LambdaParams},
+    functions::{Arity, Builtin, Callable, EvalMode, Lambda, LambdaParams, Macro},
     interpreter::{EvalError, EvalResult},
 };
 
@@ -28,10 +28,12 @@ pub fn load(env: &mut Env) {
     insert_builtin(env, ">", EvalMode::Eager, Arity::Exact(2), gt);
     insert_builtin(env, "<", EvalMode::Eager, Arity::Exact(2), lt);
     insert_builtin(env, "if", EvalMode::Raw, Arity::Exact(3), iff);
+    insert_builtin(env, "list", EvalMode::Eager, Arity::Any, list);
     insert_builtin(env, "intern", EvalMode::Eager, Arity::Exact(1), intern);
     insert_builtin(env, "lambda", EvalMode::Raw, Arity::Exact(2), lambda);
     insert_builtin(env, "set", EvalMode::Raw, Arity::Exact(2), set);
     insert_builtin(env, "def", EvalMode::Raw, Arity::AtLeast(2), def);
+    insert_builtin(env, "defmacro", EvalMode::Raw, Arity::Exact(3), defmacro);
 }
 
 fn add(_: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {
@@ -67,6 +69,10 @@ fn iff(interpreter: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {
     } else {
         interpreter.eval(else_branch)
     }
+}
+
+fn list(_: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {
+    Ok(List(args.to_vec()))
 }
 
 fn eq(_: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {
@@ -178,4 +184,19 @@ fn parse_lambda_params(params: &[Expr]) -> EvalResult<LambdaParams> {
     }
 
     Ok(LambdaParams::Fixed(arg_names))
+}
+
+fn defmacro(interpreter: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {
+    let [Symbol(name), List(params), body] = args else {
+        return Err(EvalError::ArgumentError);
+    };
+
+    let value = Expr::Callable(Callable::Macro(Macro {
+        params: parse_lambda_params(params)?,
+        body: Box::new(body.clone()),
+        env: interpreter.env.clone(),
+    }));
+
+    interpreter.env.insert(name.clone(), value.clone());
+    Ok(value)
 }

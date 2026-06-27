@@ -104,6 +104,9 @@ parser! {
             .map(Expr::List);
 
         let quote = (c('\''), expr()).map(|(_, e)| Quote(Box::new(e)));
+        let quasiquote = (c('`'), expr()).map(|(_, e)| QuasiQuote(Box::new(e)));
+        let unquote = (c(','), expr()).map(|(_, e)| Unquote(Box::new(e)));
+
 
         choice((
             boolean(),
@@ -114,7 +117,9 @@ parser! {
             empty_list,
             sstring(),
             list,
-            quote
+            quote,
+            quasiquote,
+            unquote,
         ))
     }
 }

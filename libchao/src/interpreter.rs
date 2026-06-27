@@ -27,6 +27,8 @@ pub enum EvalError {
     DefParamMustBeSymbol,
     #[error("unbound variable")]
     UnboundVariable,
+    #[error("unquote outside quasiquote")]
+    UnquoteOutsideQuasiquote,
 }
 
 pub type EvalResult<T> = Result<T, EvalError>;
@@ -70,11 +72,31 @@ impl Interpreter {
             | Expr::Callable(_) => Ok(expr.clone()),
             Expr::Symbol(symbol) => Ok(self.env.get(symbol).unwrap_or(Expr::Nil)),
             Expr::Quote(expr) => Ok(*expr.clone()),
+            Expr::QuasiQuote(expr) => self.eval_quasiquote(expr, 1),
+            Expr::Unquote(_expr) => Err(EvalError::UnquoteOutsideQuasiquote),
             Expr::List(list) => self.eval_list(list),
         }
     }
 
-    pub fn eval_list(&mut self, list: &[Expr]) -> EvalResult<Expr> {
+    fn eval_quasiquote(&mut self, expr: &Expr, depth: usize) -> EvalResult<Expr> {
+        match expr {
+            Expr::Unquote(inner) if depth == 1 => self.eval(inner),
+            Expr::Unquote(inner) => Ok(Expr::Unquote(Box::new(
+                self.eval_quasiquote(inner, depth - 1)?,
+            ))),
+            Expr::QuasiQuote(inner) => Ok(Expr::QuasiQuote(Box::new(
+                self.eval_quasiquote(inner, depth + 1)?,
+            ))),
+            Expr::List(items) => items
+                .iter()
+                .map(|item| self.eval_quasiquote(item, depth))
+                .collect::<EvalResult<Vec<_>>>()
+                .map(Expr::List),
+            other => Ok(other.clone()),
+        }
+    }
+
+    fn eval_list(&mut self, list: &[Expr]) -> EvalResult<Expr> {
         let [head, tail @ ..] = list else {
             return Ok(Expr::Nil);
         };
@@ -98,6 +120,13 @@ impl Interpreter {
                 self.with_env(lambda.env.child_with(bindings), |interpreter| {
                     interpreter.eval(&lambda.body)
                 })
+            }
+            Expr::Callable(Callable::Macro(macro_)) => {
+                let bindings = macro_.params.bind(tail)?;
+                let expansion = self.with_env(macro_.env.child_with(bindings), |interpreter| {
+                    interpreter.eval(&macro_.body)
+                })?;
+                self.eval(&expansion)
             }
             _ => Err(EvalError::CanOnlyApplyFunctions),
         }

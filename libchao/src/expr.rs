@@ -17,6 +17,8 @@ pub enum Expr {
     Str(String),
     Symbol(String),
     Quote(Box<Expr>),
+    QuasiQuote(Box<Expr>),
+    Unquote(Box<Expr>),
     Callable(Callable),
     List(Vec<Expr>),
 }
@@ -43,6 +45,8 @@ impl PartialOrd for Expr {
             (Str(a), Str(b)) => PartialOrd::partial_cmp(a, b),
             (Symbol(a), Symbol(b)) => PartialOrd::partial_cmp(a, b),
             (Quote(a), Quote(b)) => PartialOrd::partial_cmp(a, b),
+            (QuasiQuote(a), QuasiQuote(b)) => PartialOrd::partial_cmp(a, b),
+            (Unquote(a), Unquote(b)) => PartialOrd::partial_cmp(a, b),
             _ => None,
         }
     }
@@ -60,6 +64,8 @@ impl fmt::Debug for Expr {
             Str(x) => write!(f, "{:?}", x),
             Symbol(x) => write!(f, "{}", x),
             Quote(x) => write!(f, "'{:?}", x),
+            QuasiQuote(x) => write!(f, "`{:?}", x),
+            Unquote(x) => write!(f, ",{:?}", x),
             Callable(_) => write!(f, "<callable>"),
             List(xs) => write!(f, "({})", xs.iter().map(|x| format!("{:?}", x)).join(" ")),
         }
@@ -76,6 +82,8 @@ impl fmt::Display for Expr {
             Str(_) => write!(f, "{}", format!("{:?}", self).yellow()),
             Symbol(_) => write!(f, "{}", format!("{:?}", self).bright_white()),
             Quote(x) => write!(f, "'{}", x),
+            QuasiQuote(x) => write!(f, "`{}", x),
+            Unquote(x) => write!(f, ",{}", x),
             Callable(_) => write!(f, "{}", format!("{:?}", self).magenta()),
             List(xs) => write!(f, "({})", xs.iter().map(|x| format!("{}", x)).join(" ")),
         }

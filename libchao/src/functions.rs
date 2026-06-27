@@ -9,6 +9,7 @@ pub type BuiltinFn = fn(&mut Interpreter, &[Expr]) -> EvalResult<Expr>;
 pub enum Callable {
     Builtin(Builtin),
     Lambda(Lambda),
+    Macro(Macro),
 }
 
 impl PartialEq for Callable {
@@ -87,4 +88,11 @@ impl LambdaParams {
             LambdaParams::Fixed(_) => Err(EvalError::ArityMismatch),
         }
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct Macro {
+    pub params: LambdaParams,
+    pub body: Box<Expr>,
+    pub env: Env,
 }

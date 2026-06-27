@@ -104,6 +104,8 @@ fn parses_quotes() {
         "'('(1))",
         Quote(Box::new(List(vec![Quote(Box::new(List(vec![Int(1)])))])))
     );
+    assert_parse!("`(1)", QuasiQuote(Box::new(List(vec![Int(1)]))));
+    assert_parse!(",(1)", Unquote(Box::new(List(vec![Int(1)]))));
 }
 
 #[test]
