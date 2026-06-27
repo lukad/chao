@@ -1,7 +1,7 @@
 [package]
 name = "libchao"
 version = "0.1.0"
-authors = ["Luka Dornhecker <luka.dornhecker@gmail.com>"]
+authors = ["Luka Dornhecker"]
 description = "A simple lisp implementation"
 homepage = "https://github.com/lukad/chao"
 license = "MIT"
