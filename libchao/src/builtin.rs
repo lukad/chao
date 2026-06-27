@@ -34,6 +34,9 @@ pub fn load(env: &mut Env) {
     insert_builtin(env, "set", EvalMode::Raw, Arity::Exact(2), set);
     insert_builtin(env, "def", EvalMode::Raw, Arity::AtLeast(2), def);
     insert_builtin(env, "defmacro", EvalMode::Raw, Arity::Exact(3), defmacro);
+    insert_builtin(env, "car", EvalMode::Raw, Arity::Exact(1), car);
+    insert_builtin(env, "cdr", EvalMode::Raw, Arity::Exact(1), cdr);
+    insert_builtin(env, "cons", EvalMode::Raw, Arity::Exact(2), cons);
 }
 
 fn add(_: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {
@@ -199,4 +202,37 @@ fn defmacro(interpreter: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {
 
     interpreter.env.insert(name.clone(), value.clone());
     Ok(value)
+}
+
+fn car(_: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {
+    match args {
+        [Expr::List(items)] => items.first().cloned().ok_or(EvalError::TypeError),
+        [Expr::Nil] => Ok(Expr::Nil),
+        [_] => Err(EvalError::TypeError),
+        _ => Err(EvalError::ArityMismatch),
+    }
+}
+
+fn cdr(_: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {
+    match args {
+        [Expr::List(items)] if items.is_empty() => Ok(Expr::Nil),
+        [Expr::List(items)] => Ok(Expr::List(items[1..].to_vec())),
+        [Expr::Nil] => Ok(Expr::Nil),
+        [_] => Err(EvalError::TypeError),
+        _ => Err(EvalError::ArityMismatch),
+    }
+}
+
+fn cons(_: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {
+    match args {
+        [head, Expr::List(tail)] => {
+            let mut items = Vec::with_capacity(tail.len() + 1);
+            items.push(head.clone());
+            items.extend(tail.iter().cloned());
+            Ok(Expr::List(items))
+        }
+        [head, Expr::Nil] => Ok(Expr::List(vec![head.clone()])),
+        [_, _] => Err(EvalError::TypeError),
+        _ => Err(EvalError::ArityMismatch),
+    }
 }

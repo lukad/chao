@@ -63,11 +63,14 @@ fn parses_lists() {
         "(+ 1 nil true)",
         List(vec![Symbol("+".to_string()), Int(1), Nil, Bool(true)])
     );
-    assert_parse!("()", Nil);
-    assert_parse!("(())", List(vec![Nil]));
-    assert_parse!("(1 () 2)", List(vec![Int(1), Nil, Int(2)]));
-    assert_parse!("((()))", List(vec![List(vec![Nil])]));
-    assert_parse!("((() ()))", List(vec![List(vec![Nil, Nil])]));
+    assert_parse!("()", List(vec![]));
+    assert_parse!("(())", List(vec![List(vec![])]));
+    assert_parse!("(1 () 2)", List(vec![Int(1), List(vec![]), Int(2)]));
+    assert_parse!("((()))", List(vec![List(vec![List(vec![])])]));
+    assert_parse!(
+        "((() ()))",
+        List(vec![List(vec![List(vec![]), List(vec![])])])
+    );
     assert_parse!("((42))", List(vec![List(vec![Int(42)])]));
     assert_parse!(
         "(+ 1 2 3)",
@@ -82,7 +85,7 @@ fn parses_lists() {
             Nil,
             Symbol("bar".to_string()),
             Float(0.42),
-            Nil,
+            List(vec![]),
         ])
     );
 }
@@ -91,7 +94,7 @@ fn parses_lists() {
 fn parses_quotes() {
     assert_parse!("'1", Quote(Box::new(Int(1))));
     assert_parse!("''1", Quote(Box::new(Quote(Box::new(Int(1))))));
-    assert_parse!("'()", Quote(Box::new(Nil)));
+    assert_parse!("'()", Quote(Box::new(List(vec![]))));
     assert_parse!(
         "'(a b c)",
         Quote(Box::new(List(vec![

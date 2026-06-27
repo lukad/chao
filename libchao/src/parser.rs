@@ -98,7 +98,6 @@ parser! {
     fn expr[I]()(I) -> Expr
     where [I: Stream<Token = char>]
     {
-        let empty_list = attempt((c('('), spaces(), c(')'), spaces())).map(|_| Nil);
         let list = between(c('(').skip(spaces()), c(')'), many(expr()))
             .skip(spaces())
             .map(Expr::List);
@@ -114,7 +113,6 @@ parser! {
             int(),
             nil(),
             symbol(),
-            empty_list,
             sstring(),
             list,
             quote,
