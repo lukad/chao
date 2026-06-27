@@ -34,6 +34,7 @@ fn parses_booleans() {
 #[test]
 fn parse_symbols() {
     assert_parse!("symbol", Symbol("symbol".to_string()));
+    assert_parse!("add2", Symbol("add2".to_string()));
     assert_parse_err!("sym bol");
     assert_parse!("+-/*%|&", Symbol("+-/*%|&".to_string()));
 }

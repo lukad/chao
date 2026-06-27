@@ -52,9 +52,12 @@ where
     I: Stream<Token = char>,
     I::Error: ParseError<I::Token, I::Range, I::Position>,
 {
-    many1(letter().or(one_of("+-*/^&|%!=><".chars())))
+    (
+        letter().or(one_of("+-*/^&|%!=><".chars())),
+        many(letter().or(digit()).or(one_of("+-*/^&|%!=><".chars()))),
+    )
         .skip(spaces())
-        .map(Symbol)
+        .map(|(head, tail): (char, String)| Symbol(format!("{}{}", head, tail)))
 }
 
 fn sstring<I>() -> impl Parser<I, Output = Expr>
