@@ -28,6 +28,7 @@ pub fn load(env: &mut Env) {
     insert_builtin(env, ">", EvalMode::Eager, Arity::Exact(2), gt);
     insert_builtin(env, "<", EvalMode::Eager, Arity::Exact(2), lt);
     insert_builtin(env, "if", EvalMode::Raw, Arity::Exact(3), iff);
+    insert_builtin(env, "do", EvalMode::Raw, Arity::Any, do_form);
     insert_builtin(env, "list", EvalMode::Eager, Arity::Any, list);
     insert_builtin(env, "intern", EvalMode::Eager, Arity::Exact(1), intern);
     insert_builtin(env, "lambda", EvalMode::Raw, Arity::Exact(2), lambda);
@@ -72,6 +73,16 @@ fn iff(interpreter: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {
     } else {
         interpreter.eval(else_branch)
     }
+}
+
+fn do_form(interpreter: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {
+    let mut result = Nil;
+
+    for expr in args {
+        result = interpreter.eval(expr)?;
+    }
+
+    Ok(result)
 }
 
 fn list(_: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {

@@ -18,6 +18,7 @@ A small Lisp interpreter.
 | `def`      | Define a function              | `(def square (x) (* x x))`                         |
 | `set`      | Assign an existing binding     | `(set answer 43)`                                  |
 | `if`       | Evaluate one branch lazily     | `(if true "yes" "no")`                             |
+| `do`       | Evaluate expressions in order  | `(do (def x 1) (set x (+ x 1)) x)`                 |
 | `list`     | Build a list                   | `(list 1 (+ 1 1) 'x)`                              |
 | `defmacro` | Define a macro                 | <code>(defmacro when (c b) `(if ,c ,b nil))</code> |
 | `intern`   | Convert a string to a symbol   | `(intern "name")`                                  |
