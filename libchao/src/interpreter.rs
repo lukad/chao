@@ -1,6 +1,6 @@
 use crate::{
     Env, Expr, builtin,
-    expr::{Arguments, Function},
+    functions::{Callable, EvalMode},
 };
 
 #[derive(Debug, Clone, thiserror::Error)]
@@ -49,10 +49,6 @@ impl Interpreter {
         Self { env }
     }
 
-    fn with_child_env<T>(&mut self, f: impl FnOnce(&mut Self) -> EvalResult<T>) -> EvalResult<T> {
-        self.with_env(self.env.child(), f)
-    }
-
     pub(crate) fn with_env<T>(
         &mut self,
         env: Env,
@@ -71,70 +67,43 @@ impl Interpreter {
             | Expr::Int(_)
             | Expr::Float(_)
             | Expr::Str(_)
-            | Expr::Fun(_, _)
-            | Expr::Special(_, _) => Ok(expr.clone()),
-            Expr::Symbol(symbol) => Ok(self.env.get(symbol).unwrap_or_else(|| Expr::Nil)),
+            | Expr::Callable(_) => Ok(expr.clone()),
+            Expr::Symbol(symbol) => Ok(self.env.get(symbol).unwrap_or(Expr::Nil)),
             Expr::Quote(expr) => Ok(*expr.clone()),
             Expr::List(list) => self.eval_list(list),
         }
     }
 
     pub fn eval_list(&mut self, list: &[Expr]) -> EvalResult<Expr> {
-        match list {
-            [head, tail @ ..] => match self.eval(head)? {
-                Expr::Fun(Function::Builtin(builtin), arg_names) => {
-                    let args = tail
-                        .iter()
-                        .map(|e| self.eval(e))
-                        .collect::<Result<Vec<_>, _>>()?;
-                    self.with_child_env(|interpreter| {
-                        interpreter.bind_args(&args, &arg_names)?;
-                        builtin(interpreter)
-                    })
-                }
-                Expr::Fun(Function::Dynamic(body, captured_env), arg_names) => {
-                    let args = tail
-                        .iter()
-                        .map(|e| self.eval(e))
-                        .collect::<Result<Vec<_>, _>>()?;
-                    self.with_env(captured_env.child(), |interpreter| {
-                        interpreter.bind_args(&args, &arg_names)?;
-                        interpreter.eval(&body)
-                    })
-                }
-                Expr::Special(Function::Builtin(builtin), arg_names) => {
-                    self.with_child_env(|interpreter| {
-                        interpreter.bind_args(tail, &arg_names)?;
-                        builtin(interpreter)
-                    })
-                }
-                Expr::Special(Function::Dynamic(body, captured_env), arg_names) => {
-                    self.with_env(captured_env.child(), |interpreter| {
-                        interpreter.bind_args(tail, &arg_names)?;
-                        interpreter.eval(&body)
-                    })
-                }
-                _ => Err(EvalError::CanOnlyApplyFunctions),
-            },
-            [] => Ok(Expr::Nil),
+        let [head, tail @ ..] = list else {
+            return Ok(Expr::Nil);
+        };
+
+        let callable = self.eval(head)?;
+
+        match callable {
+            Expr::Callable(Callable::Builtin(builtin)) => {
+                let args = match builtin.mode {
+                    EvalMode::Eager => self.eval_args(tail)?,
+                    EvalMode::Raw => tail.to_vec(),
+                };
+
+                builtin.arity.check(&args)?;
+                (builtin.f)(self, &args)
+            }
+            Expr::Callable(Callable::Lambda(lambda)) => {
+                let args = self.eval_args(tail)?;
+                let bindings = lambda.params.bind(&args)?;
+
+                self.with_env(lambda.env.child_with(bindings), |interpreter| {
+                    interpreter.eval(&lambda.body)
+                })
+            }
+            _ => Err(EvalError::CanOnlyApplyFunctions),
         }
     }
 
-    fn bind_args(&mut self, args: &[Expr], params: &Arguments) -> EvalResult<()> {
-        match params {
-            Arguments::Variadic => self
-                .env
-                .insert("varargs".to_string(), Expr::List(args.to_vec())),
-            Arguments::Fixed(names) => {
-                if args.len() != names.len() {
-                    panic!("Wrong argument count");
-                    // TODO: return Err
-                }
-                for (name, arg) in names.iter().zip(args.iter()) {
-                    self.env.insert(name.clone(), arg.clone());
-                }
-            }
-        }
-        Ok(())
+    fn eval_args(&mut self, args: &[Expr]) -> EvalResult<Vec<Expr>> {
+        args.iter().map(|arg| self.eval(arg)).collect()
     }
 }

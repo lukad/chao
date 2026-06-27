@@ -1,13 +1,12 @@
 use std::cmp::Ordering;
 use std::fmt;
 use std::ops::{Add, Div, Mul, Sub};
-use std::rc::Rc;
 
 use colored::*;
 use itertools::Itertools;
 
+use crate::functions::Callable;
 use crate::interpreter::{EvalError, EvalResult};
-use crate::{Env, Interpreter};
 
 #[derive(Clone, PartialEq)]
 pub enum Expr {
@@ -18,8 +17,7 @@ pub enum Expr {
     Str(String),
     Symbol(String),
     Quote(Box<Expr>),
-    Fun(Function, Arguments),
-    Special(Function, Arguments),
+    Callable(Callable),
     List(Vec<Expr>),
 }
 
@@ -45,8 +43,6 @@ impl PartialOrd for Expr {
             (Str(a), Str(b)) => PartialOrd::partial_cmp(a, b),
             (Symbol(a), Symbol(b)) => PartialOrd::partial_cmp(a, b),
             (Quote(a), Quote(b)) => PartialOrd::partial_cmp(a, b),
-            (Fun(a, _), Fun(b, _)) => PartialOrd::partial_cmp(a, b),
-            (Special(a, _), Special(b, _)) => PartialOrd::partial_cmp(a, b),
             _ => None,
         }
     }
@@ -64,8 +60,7 @@ impl fmt::Debug for Expr {
             Str(x) => write!(f, "{:?}", x),
             Symbol(x) => write!(f, "{}", x),
             Quote(x) => write!(f, "'{:?}", x),
-            Fun(_, args) => write!(f, "<function {:?}>", args),
-            Special(_, _) => write!(f, "<special>"),
+            Callable(_) => write!(f, "<callable>"),
             List(xs) => write!(f, "({})", xs.iter().map(|x| format!("{:?}", x)).join(" ")),
         }
     }
@@ -81,8 +76,7 @@ impl fmt::Display for Expr {
             Str(_) => write!(f, "{}", format!("{:?}", self).yellow()),
             Symbol(_) => write!(f, "{}", format!("{:?}", self).bright_white()),
             Quote(x) => write!(f, "'{}", x),
-            Fun(_, _) => write!(f, "{}", format!("{:?}", self).magenta()),
-            Special(_, _) => write!(f, "{}", format!("{:?}", self).magenta()),
+            Callable(_) => write!(f, "{}", format!("{:?}", self).magenta()),
             List(xs) => write!(f, "({})", xs.iter().map(|x| format!("{}", x)).join(" ")),
         }
     }
@@ -154,59 +148,5 @@ impl Div for Expr {
             }
         };
         Ok(quotient)
-    }
-}
-
-pub trait BuiltinFun<T>: Fn(&mut Interpreter) -> EvalResult<T> {}
-
-impl<F: Fn(&mut Interpreter) -> EvalResult<Expr>> BuiltinFun<Expr> for F {}
-
-#[derive(Clone)]
-pub enum Function {
-    Builtin(Rc<dyn BuiltinFun<Expr>>),
-    Dynamic(Box<Expr>, Env),
-}
-
-use self::Function::*;
-
-impl PartialEq for Function {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Dynamic(a, _), Dynamic(b, _)) => a == b,
-            (Builtin(a), Builtin(b)) => Rc::ptr_eq(a, b),
-            _ => false,
-        }
-    }
-}
-
-impl Eq for Function {}
-
-impl PartialOrd for Function {
-    fn partial_cmp(&self, _other: &Self) -> Option<Ordering> {
-        None
-    }
-}
-
-#[derive(Clone, PartialEq, PartialOrd, Eq)]
-pub enum Arguments {
-    Variadic,
-    Fixed(Vec<String>),
-}
-
-impl fmt::Debug for Arguments {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Arguments::Variadic => write!(f, "..."),
-            Arguments::Fixed(args) => {
-                let mut result = String::new();
-                for (i, arg) in args.iter().enumerate() {
-                    result.push_str(arg.as_str());
-                    if i + 1 < args.len() {
-                        result.push_str(", ");
-                    }
-                }
-                write!(f, "({})", result)
-            }
-        }
     }
 }

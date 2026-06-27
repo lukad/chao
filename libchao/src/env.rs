@@ -82,6 +82,16 @@ impl Env {
             })),
         }
     }
+
+    pub fn child_with(&self, bindings: Vec<(String, Expr)>) -> Self {
+        let mut child = self.child();
+
+        for (name, value) in bindings {
+            child.insert(name, value);
+        }
+
+        child
+    }
 }
 
 impl Default for Env {
