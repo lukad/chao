@@ -29,6 +29,7 @@ pub fn load(env: &mut Env) {
     insert_builtin(env, "<", EvalMode::Eager, Arity::Exact(2), lt);
     insert_builtin(env, "if", EvalMode::Raw, Arity::Exact(3), iff);
     insert_builtin(env, "do", EvalMode::Raw, Arity::Any, do_form);
+    insert_builtin(env, "let", EvalMode::Raw, Arity::AtLeast(2), let_form);
     insert_builtin(env, "list", EvalMode::Eager, Arity::Any, list);
     insert_builtin(env, "intern", EvalMode::Eager, Arity::Exact(1), intern);
     insert_builtin(env, "lambda", EvalMode::Raw, Arity::Exact(2), lambda);
@@ -76,10 +77,50 @@ fn iff(interpreter: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {
 }
 
 fn do_form(interpreter: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {
+    eval_sequence(interpreter, args)
+}
+
+fn let_form(interpreter: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {
+    let [bindings_expr, body @ ..] = args else {
+        return Err(EvalError::ArityMismatch);
+    };
+
+    let bindings = match bindings_expr {
+        Nil => vec![],
+        List(bindings) => eval_let_bindings(interpreter, bindings)?,
+        _ => return Err(EvalError::ArgumentError),
+    };
+
+    let env = interpreter.env.child_with(bindings);
+    interpreter.with_env(env, |interpreter| eval_sequence(interpreter, body))
+}
+
+fn eval_sequence(interpreter: &mut Interpreter, args: &[Expr]) -> EvalResult<Expr> {
     let mut result = Nil;
 
     for expr in args {
         result = interpreter.eval(expr)?;
+    }
+
+    Ok(result)
+}
+
+fn eval_let_bindings(
+    interpreter: &mut Interpreter,
+    bindings: &[Expr],
+) -> EvalResult<Vec<(String, Expr)>> {
+    let mut result = Vec::with_capacity(bindings.len());
+
+    for binding in bindings {
+        let List(items) = binding else {
+            return Err(EvalError::ArgumentError);
+        };
+
+        let [Symbol(name), value_expr] = items.as_slice() else {
+            return Err(EvalError::ArgumentError);
+        };
+
+        result.push((name.clone(), interpreter.eval(value_expr)?));
     }
 
     Ok(result)
